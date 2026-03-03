@@ -28,6 +28,9 @@ class FrameGraph {
 public:
     void init(VulkanContext* ctx, Swapchain* swapchain);
 
+    FGBufferHandle create_buffer(BufferDesc desc);
+    FGTextureHandle create_texture(TextureDesc desc);
+
     PassBuilder create_pass(const std::string& name, PassType type);
 
     void compile();

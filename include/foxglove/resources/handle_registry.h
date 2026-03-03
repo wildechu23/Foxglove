@@ -1,7 +1,13 @@
 #pragma once
 
-#include "foxglove/renderer/framegraph_pass.h"
 #include "foxglove/memory/allocator.h"
+#include "foxglove/resources/handle.h"
+
+#include <vector>
+
+class FGBuffer;
+class FGTexture;
+
 
 // use memory allocator so pointers are valid on resize
 // does not expect memory
@@ -20,9 +26,14 @@ public:
     template <class ...TArgs>
     HandleT create(TArgs&&... args) {
         void* allocation = m_allocator.allocate(sizeof(T));
+        
+        // set handle of new object via friendship
         T* resource_ptr = new(allocation) T(std::forward<TArgs>(args)...);
+        resource_ptr->m_handle = HandleT(static_cast<uint32_t>(
+                    m_array.size() - 1));
+
         m_array.push_back(resource_ptr);
-        return HandleT(m_array.size() - 1);
+        return resource_ptr->m_handle;
     }
 
     void reset() {
@@ -44,5 +55,5 @@ private:
     LLAllocator m_allocator;
 };
 
-using FGBufferRegistry = FGHandleRegistry<FGBuffer, BufferHandle>;
-using FGTextureRegistry = FGHandleRegistry<FGTexture, TextureHandle>;
+using FGBufferRegistry = FGHandleRegistry<FGBuffer, FGBufferHandle>;
+using FGTextureRegistry = FGHandleRegistry<FGTexture, FGTextureHandle>;

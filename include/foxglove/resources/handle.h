@@ -96,8 +96,6 @@ public:
     
     TaggedHandle(const TaggedHandle&) = default;
     TaggedHandle& operator=(const TaggedHandle&) = default;
-private:
-    TaggedHandle(uint64_t data) : Handle(data) {}
 };
 
 template<typename Tag, TypeID TypeIDValue>
@@ -120,8 +118,6 @@ public:
     
     TaggedTHandle(const TaggedTHandle&) = default;
     TaggedTHandle& operator=(const TaggedTHandle&) = default;
-private:
-    TaggedTHandle(uint64_t data) : THandle(data) {}
 };
 
 
@@ -134,8 +130,8 @@ using BufferHandle = TaggedHandle<BufferTag, TypeID::Buffer>;
 using TextureHandle = TaggedHandle<TextureTag, TypeID::Texture>;
 
 
-using TBufferHandle = TaggedTHandle<BufferTag, TypeID::Buffer>;
-using TTextureHandle = TaggedTHandle<TextureTag, TypeID::Texture>;
+using FGBufferHandle = TaggedTHandle<BufferTag, TypeID::Buffer>;
+using FGTextureHandle = TaggedTHandle<TextureTag, TypeID::Texture>;
 
 
 

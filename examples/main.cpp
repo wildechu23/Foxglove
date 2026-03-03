@@ -9,6 +9,7 @@ int main() {
     window.init();
 
     Renderer renderer(window);
+    FrameGraph& fg = renderer.get_fg();
     
     VkImageUsageFlags draw_image_usages = VkImageUsageFlags(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -16,13 +17,12 @@ int main() {
             VK_IMAGE_USAGE_STORAGE_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    FGTexture draw_image(TextureDesc{
+    FGTextureHandle draw_image = fg.create_texture(TextureDesc{
         .extent = {width, height},
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
         .usage = draw_image_usages,
     });
 
-    FrameGraph& fg = renderer.get_fg();
     fg.create_pass("test", PassType::Graphics)
         .bind_texture(draw_image, TextureUsage::StorageImage,
                 ResourceAccess::Write)

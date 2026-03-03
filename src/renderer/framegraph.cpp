@@ -1,5 +1,7 @@
 #include "foxglove/renderer/framegraph.h"
 
+#include <iostream>
+
 //
 // FrameGraph
 //
@@ -7,6 +9,14 @@
 void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
     m_ctx = ctx;
     m_swapchain = swapchain;
+}
+
+FGBufferHandle FrameGraph::create_buffer(BufferDesc desc) {
+    return m_buffers.create(desc);
+}
+
+FGTextureHandle FrameGraph::create_texture(TextureDesc desc) {
+    return m_textures.create(desc);
 }
 
 PassBuilder FrameGraph::create_pass(const std::string& name, PassType type) {
@@ -84,7 +94,7 @@ void FrameGraph::build_dependencies() {
         // TODO: THIS ASSUMES PASSES COME IN ORDER
         // DONT, CONSIDER OTHER ISSUES
         for(const BufferBinding& b : pass->get_buffers()) {
-            Pass* last = b.buffer.get_last_writer();
+            Pass* last = b.buffer->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
@@ -93,7 +103,7 @@ void FrameGraph::build_dependencies() {
         
         // in the future this will have to be done per subresource
         for(const TextureBinding& t : pass->get_textures()) {
-            Pass* last = t.texture.get_last_writer();
+            Pass* last = t.texture->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
@@ -105,22 +115,22 @@ void FrameGraph::build_dependencies() {
 }
 
 void collect_buffer(std::vector<FGBuffer*> ctx, Pass* pass, 
-        FGBuffer& buffer) {
+        FGBuffer* buffer) {
     // check if first pass?
     
     // collect allocations
-    if(buffer.is_transient()) {
-        ctx.push_back(&buffer);
+    if(buffer->is_transient()) {
+        ctx.push_back(buffer);
     }
 }
 
 void collect_texture(std::vector<FGTexture*> ctx, Pass* pass,
-        FGTexture& texture) {
+        FGTexture* texture) {
     // check if first pass?
     
     // collect allocations
-    if(texture.is_transient()) {
-        ctx.push_back(&texture);
+    if(texture->is_transient()) {
+        ctx.push_back(texture);
     }
 }
 
@@ -160,12 +170,12 @@ void FrameGraph::allocate_resources() {
 }
 
 void add_buffer_barrier(const BufferBinding& bb, Pass* pass) {
-    FGBuffer& buffer = bb.buffer;
+    FGBuffer* buffer = bb.buffer;
 
     BufferTransitionInfo bti = {
-        buffer.get_handle(),
-        buffer.get_usage(),         // src
-        buffer.get_access(),        // src
+        buffer->get_handle(),
+        buffer->get_usage(),         // src
+        buffer->get_access(),        // src
         bb.usage,                   // dst
         bb.access                   // dst
     };
@@ -173,17 +183,17 @@ void add_buffer_barrier(const BufferBinding& bb, Pass* pass) {
     pass->add_buffer_transition(bti);
     
     // don't forget to change state
-    buffer.set_usage(bb.usage);
-    buffer.set_access(bb.access);
+    buffer->set_usage(bb.usage);
+    buffer->set_access(bb.access);
 }
 
 void add_texture_barrier(const TextureBinding& tb, Pass* pass) {
-    FGTexture& texture = tb.texture;
+    FGTexture* texture = tb.texture;
 
     TextureTransitionInfo tti = {
-        texture.get_handle(),
-        texture.get_usage(),        // src
-        texture.get_access(),       // src
+        texture->get_handle(),
+        texture->get_usage(),        // src
+        texture->get_access(),       // src
         tb.usage,                   // dst
         tb.access                   // dst
     };
@@ -191,8 +201,8 @@ void add_texture_barrier(const TextureBinding& tb, Pass* pass) {
     pass->add_texture_transition(tti);
     
     // don't forget to change state
-    texture.set_usage(tb.usage);
-    texture.set_access(tb.access);
+    texture->set_usage(tb.usage);
+    texture->set_access(tb.access);
 }
 
 void FrameGraph::collect_pass_barriers() {
@@ -212,6 +222,7 @@ void FrameGraph::collect_pass_barriers() {
         }
     }
 }
+
 
 // Unreal uses a transition_create_queue, added to by add_x_barrier
 void FrameGraph::compile_pass_barriers() {
@@ -250,6 +261,10 @@ void FrameGraph::compile_pass_barriers() {
 
         for(TextureTransitionInfo tti : pass->get_texture_transitions()) {
             FGTexture* texture = m_textures.get(tti.handle);
+            if(texture == nullptr) {
+                // TODO: add fail check
+            }
+
             TextureResource* tr = texture->get_resource();
 
             VkPipelineStageFlags2 src_stage = deduce_pipeline_flags(

@@ -23,15 +23,15 @@ class FrameGraph;
 
 // usage and access refer to the resource's expected usage in this pass
 // the resource's internal variables refer to its current state
-// these are used to construct transition structs
+// these are used to construct transitioninfo structs
 struct BufferBinding {
-    FGBuffer& buffer;
+    FGBuffer* buffer;
     BufferUsage usage;
     ResourceAccess access;
 };
 
 struct TextureBinding {
-    FGTexture& texture;
+    FGTexture* texture;
     TextureUsage usage;
     ResourceAccess access;
 };
@@ -45,7 +45,7 @@ enum class PassType {
 };
 
 struct BufferTransitionInfo {
-    BufferHandle handle;
+    FGBufferHandle handle;
     
     BufferUsage src_usage;
     ResourceAccess src_access;
@@ -55,7 +55,7 @@ struct BufferTransitionInfo {
 };
 
 struct TextureTransitionInfo {
-    TextureHandle handle;
+    FGTextureHandle handle;
     
     TextureUsage src_usage;
     ResourceAccess src_access;
@@ -75,7 +75,7 @@ public:
     const std::vector<TextureBinding>& get_textures() const { return m_textures; }
     
 private:
-    friend class PassBuilder;
+    friend PassBuilder;
 
     PassDesc(const std::string& name, PassType type,
             std::vector<BufferBinding> buffers,
@@ -164,14 +164,14 @@ public:
     PassBuilder(FrameGraph* fg, const std::string& name, PassType type) : 
         m_fg(fg), m_name(name), m_type(type) {}
 
-    PassBuilder& bind_buffer(FGBuffer& buffer,
+    PassBuilder& bind_buffer(FGBufferHandle handle,
             BufferUsage usage, ResourceAccess access);
-    PassBuilder& bind_texture(FGTexture& texture, 
+    PassBuilder& bind_texture(FGTextureHandle handle, 
             TextureUsage usage, ResourceAccess access);
     
-    PassBuilder& bind_present_source(FGTexture& texture);
+    PassBuilder& bind_present_source(FGTextureHandle handle);
 
-    PassBuilder& clear_color(FGTexture& texture, Color color);
+    PassBuilder& clear_color(FGTextureHandle handle, Color color);
     PassBuilder& execute(std::function<void(PassContext)> execute_fn);
 
     Pass& build();

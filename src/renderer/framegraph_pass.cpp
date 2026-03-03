@@ -6,8 +6,9 @@
 //
 
 // TODO: ADD HANDLE 
-PassBuilder& PassBuilder::bind_buffer(FGBuffer& buffer,
+PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
         BufferUsage usage, ResourceAccess access) {
+    FGBuffer* buffer = m_fg->m_buffers.get(handle);
     m_buffers.push_back(BufferBinding{
             buffer,
             usage,
@@ -16,8 +17,9 @@ PassBuilder& PassBuilder::bind_buffer(FGBuffer& buffer,
     return *this;
 }
 
-PassBuilder& PassBuilder::bind_texture(FGTexture& texture,
+PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
         TextureUsage usage, ResourceAccess access) {
+    FGTexture* texture = m_fg->m_textures.get(handle);
     m_textures.push_back(TextureBinding{
             texture,
             usage,
@@ -26,8 +28,9 @@ PassBuilder& PassBuilder::bind_texture(FGTexture& texture,
     return *this;
 }
 
-PassBuilder& PassBuilder::bind_present_source(FGTexture& texture) {
+PassBuilder& PassBuilder::bind_present_source(FGTextureHandle handle) {
     assert(m_type == PassType::Present);
+    FGTexture* texture = m_fg->m_textures.get(handle);
     
     // does need to be transfer src
     m_textures.push_back(TextureBinding{
@@ -40,8 +43,8 @@ PassBuilder& PassBuilder::bind_present_source(FGTexture& texture) {
     m_execute_fn = [&](PassContext ctx) {
         Swapchain* swapchain = m_fg->m_swapchain;
         // copy image
-        VkImage& src_image = texture.get_resource()->image;
-        VkExtent2D src_extent = texture.get_resource()->extent;
+        VkImage& src_image = texture->get_resource()->image;
+        VkExtent2D src_extent = texture->get_resource()->extent;
 
         VkImage& swapchain_image = swapchain->get_image(ctx.swapchain_idx);
         VkExtent2D swapchain_extent = swapchain->get_extent();
@@ -57,7 +60,9 @@ PassBuilder& PassBuilder::bind_present_source(FGTexture& texture) {
     return *this;
 }
 
-PassBuilder& PassBuilder::clear_color(FGTexture& texture, Color color) {
+PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
+    FGTexture* texture = m_fg->m_textures.get(handle);
+    
     execute([&](PassContext ctx) {
         VkClearColorValue clear_value = {
             color.r, color.g, color.b, color.a
@@ -69,7 +74,7 @@ PassBuilder& PassBuilder::clear_color(FGTexture& texture, Color color) {
             0, VK_REMAINING_ARRAY_LAYERS
         };
         // storage_image -> general?
-        vkCmdClearColorImage(ctx.cmd, texture.get_resource()->image,
+        vkCmdClearColorImage(ctx.cmd, texture->get_resource()->image,
                 VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &clear_range);
     });
     return *this;
