@@ -26,7 +26,7 @@ int main() {
     fg.create_pass("test", PassType::Graphics)
         .bind_texture(draw_image, TextureUsage::StorageImage,
                 ResourceAccess::Write)
-        .clear_color(draw_image, Color{1.f, 0.f, 0.f, 1.f})
+        .clear_color(draw_image, Color{0.f, 1.f, 0.f, 1.f})
         .build();
 
     fg.create_pass("present", PassType::Present)

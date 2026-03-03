@@ -38,6 +38,9 @@ public:
     
     void set_access(ResourceAccess r) { m_access = r; }
     bool is_transient() const { return m_transient; }
+    
+    bool collected() const { return m_collected; }
+    void collect() { m_collected = true; }
 
     Pass* get_last_writer() const { return m_last_writer; }
 protected:
@@ -45,6 +48,7 @@ protected:
     ResourceAccess m_access;
 
     bool m_transient = true;
+    bool m_collected = false;
     
     // TODO: WHEN CONSIDERING MULTIPLE PIPELINES, EXTEND THIS
     Pass* m_last_writer;

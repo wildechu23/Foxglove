@@ -1,6 +1,7 @@
 #include "foxglove/renderer/framegraph_pass.h"
 #include "foxglove/renderer/framegraph.h"
 
+#include <iostream>
 //
 // PassBuilder
 //
@@ -20,6 +21,10 @@ PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
 PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
         TextureUsage usage, ResourceAccess access) {
     FGTexture* texture = m_fg->m_textures.get(handle);
+
+    if(texture == nullptr) {
+        std::cerr << "no texture" << std::endl;
+    }
     m_textures.push_back(TextureBinding{
             texture,
             usage,
@@ -40,8 +45,9 @@ PassBuilder& PassBuilder::bind_present_source(FGTextureHandle handle) {
     });
     
     // in m_execute_fn
-    m_execute_fn = [&](PassContext ctx) {
-        Swapchain* swapchain = m_fg->m_swapchain;
+    m_execute_fn = [this, texture](PassContext ctx) {
+        FrameGraph* fg = this->m_fg;
+        Swapchain* swapchain = fg->m_swapchain;
         // copy image
         VkImage& src_image = texture->get_resource()->image;
         VkExtent2D src_extent = texture->get_resource()->extent;
@@ -63,7 +69,7 @@ PassBuilder& PassBuilder::bind_present_source(FGTextureHandle handle) {
 PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
     FGTexture* texture = m_fg->m_textures.get(handle);
     
-    execute([&](PassContext ctx) {
+    execute([texture, color](PassContext ctx) {
         VkClearColorValue clear_value = {
             color.r, color.g, color.b, color.a
         };

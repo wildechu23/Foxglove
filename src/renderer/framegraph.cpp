@@ -114,24 +114,11 @@ void FrameGraph::build_dependencies() {
     // TODO: CULL
 }
 
-void collect_buffer(std::vector<FGBuffer*> ctx, Pass* pass, 
-        FGBuffer* buffer) {
-    // check if first pass?
-    
-    // collect allocations
-    if(buffer->is_transient()) {
-        ctx.push_back(buffer);
-    }
-}
-
 void collect_texture(std::vector<FGTexture*> ctx, Pass* pass,
         FGTexture* texture) {
     // check if first pass?
     
     // collect allocations
-    if(texture->is_transient()) {
-        ctx.push_back(texture);
-    }
 }
 
 void FrameGraph::allocate_resources() {
@@ -142,11 +129,19 @@ void FrameGraph::allocate_resources() {
         Pass* pass = m_passes[i].get();
         
         for(const BufferBinding& b: pass->get_buffers()) {
-            collect_buffer(transient_buffers, pass, b.buffer);
+            FGBuffer* buffer = b.buffer;
+            if(buffer->is_transient() && !buffer->collected()) {
+                transient_buffers.push_back(buffer);
+                buffer->collect();
+            }
         }
 
         for(const TextureBinding& t: pass->get_textures()) {
-            collect_texture(transient_textures, pass, t.texture);
+            FGTexture* texture = t.texture;
+            if(texture->is_transient() && !texture->collected()) {
+                transient_textures.push_back(texture);
+                texture->collect();
+            }
         }
     }
 
@@ -295,6 +290,8 @@ void FrameGraph::compile_pass_barriers() {
                 .dstAccessMask = dst_access,
                 .oldLayout = src_layout,
                 .newLayout = dst_layout,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .image = tr->image,
                 .subresourceRange = {
                     .aspectMask = aspect_mask,

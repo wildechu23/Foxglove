@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include <iostream>
+
 class FGBuffer;
 class FGTexture;
 
@@ -29,11 +31,11 @@ public:
         
         // set handle of new object via friendship
         T* resource_ptr = new(allocation) T(std::forward<TArgs>(args)...);
-        resource_ptr->m_handle = HandleT(static_cast<uint32_t>(
-                    m_array.size() - 1));
-
+        HandleT handle = HandleT(static_cast<uint32_t>(
+                    m_array.size()));
+        resource_ptr->m_handle = handle; 
         m_array.push_back(resource_ptr);
-        return resource_ptr->m_handle;
+        return handle;
     }
 
     void reset() {
