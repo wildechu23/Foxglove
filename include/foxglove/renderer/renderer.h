@@ -3,8 +3,7 @@
 #include "foxglove/window/window.h"
 #include "foxglove/vulkan/vulkan_context.h"
 #include "foxglove/vulkan/swapchain.h"
-#include "foxglove/vulkan/gpu_image.h"
-#include "foxglove/frame/frame_context.h"
+#include "foxglove/resources/frame_context.h"
 #include "foxglove/renderer/framegraph.h"
 
 #include <vector>

@@ -68,8 +68,10 @@ void util::transition_image_to_present(VkCommandBuffer cmd, VkImage image) {
     vkCmdPipelineBarrier2(cmd, &depInfo);
 }
 
-void util::copy_image_to_image(VkCommandBuffer cmd, VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize)
-{
+void util::copy_image_to_image(VkCommandBuffer cmd, VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize) {
+    // IF IDENTICAL FORMATS AND SIZE, VKCMDCOPYIMAGE
+    // CHANGING FORMATS/SIZE, VKCMDBLITIMAGE
+
 	VkImageBlit2 blitRegion = { 
         .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2, 
         .pNext = nullptr,

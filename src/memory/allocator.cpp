@@ -66,6 +66,7 @@ void PoolAllocator::reset() {
     m_alloc = nullptr;
 }
 
+#include <iostream>
 
 LLAllocator::LLAllocator(size_t page_size) : m_page_size(page_size) {
     m_top_page = nullptr;
@@ -112,9 +113,9 @@ void* LLAllocator::allocate(size_t size, size_t alignment) {
         allocate_page();
         aligned = align(m_top, alignment); // necessary?
         new_top = aligned + size;
-        m_top = new_top;
     }
-
+    
+    m_top = new_top;
     return aligned;
 }
 

@@ -6,10 +6,11 @@ class HandleBase {
 public:
     uint64_t get_data() const { return m_data; }
 
-    static constexpr uint32_t INVALID = 0;
+    static constexpr uint32_t INVALID = UINT32_MAX;
     bool is_valid() const { return m_data != INVALID; }
 protected:
-    HandleBase(uint64_t data) : m_data(data) {}
+    constexpr HandleBase() : m_data(INVALID) {}
+    constexpr HandleBase(uint64_t data) : m_data(data) {}
     uint64_t m_data;
 };
 
@@ -72,7 +73,7 @@ public:
     uint64_t get_index() const { return (m_data & INDEX_MASK) >> INDEX_SHIFT ; }
 protected:
     THandle(uint64_t data) : HandleBase(data) {}
-    THandle(uint64_t type_id, uint64_t index)
+    constexpr THandle(uint64_t type_id, uint64_t index)
         : HandleBase((type_id << TYPE_SHIFT) | 
                 (index << INDEX_SHIFT)) {}
 };
@@ -83,13 +84,13 @@ public:
     static constexpr uint8_t TYPE_ID = static_cast<uint8_t>(TypeIDValue);
     static constexpr uint8_t type_id() { return TYPE_ID; }
     
-    TaggedHandle() : Handle(0) {}
+    TaggedHandle() : Handle(INVALID) {}
 
     static TaggedHandle invalid() { 
         return TaggedHandle(INVALID); 
     }
 
-    TaggedHandle(uint32_t index, uint32_t gen) :
+    constexpr TaggedHandle(uint32_t index, uint32_t gen) :
         Handle(TYPE_ID, index, gen) {}
 
     TaggedHandle(const Handle& h) : Handle(h.m_data) {}
@@ -104,13 +105,13 @@ public:
     static constexpr uint8_t TYPE_ID = static_cast<uint8_t>(TypeIDValue);
     static constexpr uint8_t type_id() { return TYPE_ID; }
     
-    TaggedTHandle() : THandle(0) {}
+    TaggedTHandle() : THandle(INVALID) {}
 
     static TaggedTHandle invalid() { 
         return TaggedTHandle(INVALID); 
     }
 
-    TaggedTHandle(uint32_t index) :
+    constexpr TaggedTHandle(uint32_t index) :
         THandle(TYPE_ID, index) {}
 
     TaggedTHandle(const THandle& h) : 

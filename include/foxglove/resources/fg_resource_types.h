@@ -15,14 +15,18 @@ enum class TextureUsage {
     ColorAttachment,
     DepthAttachment,
     InputAttachment,
-    StorageImage
+    StorageImage,
+    TransferSrc,
+    TransferDst
 };
 
 enum class BufferUsage {
     StorageBuffer,
     UniformBuffer,
     VertexBuffer,
-    IndexBuffer
+    IndexBuffer,
+    TransferSrc,
+    TransferDst
     // Accleration structure
 };
 
@@ -31,6 +35,7 @@ class Pass;
 // TODO: CONSIDER WRAPPER FRAGMENTATION OF GENERIC PHYSICAL RESOURCE
 class FGResource {
 public:
+    FGResource(const std::string& name) : m_name(name) {}
     ~FGResource() = default;
 
     std::string get_name() const { return m_name; }
@@ -43,6 +48,7 @@ public:
     void collect() { m_collected = true; }
 
     Pass* get_last_writer() const { return m_last_writer; }
+    void set_last_writer(Pass* pass) { m_last_writer = pass; }
 protected:
     std::string m_name;
     ResourceAccess m_access;
@@ -54,9 +60,11 @@ protected:
     Pass* m_last_writer;
 };
 
+// TODO: ADD NAMES
 class FGBuffer : public FGResource {
 public:
-    FGBuffer(BufferDesc desc) : m_desc(desc) {}
+    FGBuffer(const std::string& name, BufferDesc desc) : 
+        FGResource(name), m_desc(desc) {}
     
     BufferDesc get_desc() const { return m_desc; }
     FGBufferHandle get_handle() const { return m_handle; }
@@ -77,7 +85,12 @@ private:
 
 class FGTexture : public FGResource {
 public:
-    FGTexture(TextureDesc desc) : m_desc(desc) {}
+    FGTexture(const std::string& name, TextureDesc desc) : 
+        FGResource(name), m_desc(desc) {}
+    FGTexture(const std::string& name, TextureDesc desc, TextureResource* resource) : 
+        FGResource(name), m_desc(desc), m_resource(resource) {
+        m_transient = false;
+    }
     
     TextureDesc get_desc() const { return m_desc; }
     FGTextureHandle get_handle() const { return m_handle; }

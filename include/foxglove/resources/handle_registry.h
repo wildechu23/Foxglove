@@ -44,7 +44,9 @@ public:
     }
 
     T* get(HandleT handle) {
-        if(!is_valid(handle)) return nullptr;
+        if(!is_valid(handle)) {
+            return nullptr;
+        }
         return m_array[handle.get_index()];
     }
 

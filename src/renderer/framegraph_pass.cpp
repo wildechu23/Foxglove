@@ -9,9 +9,8 @@
 // TODO: ADD HANDLE 
 PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
         BufferUsage usage, ResourceAccess access) {
-    FGBuffer* buffer = m_fg->m_buffers.get(handle);
     m_buffers.push_back(BufferBinding{
-            buffer,
+            handle,
             usage,
             access
     });
@@ -20,40 +19,43 @@ PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
 
 PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
         TextureUsage usage, ResourceAccess access) {
-    FGTexture* texture = m_fg->m_textures.get(handle);
-
-    if(texture == nullptr) {
-        std::cerr << "no texture" << std::endl;
-    }
     m_textures.push_back(TextureBinding{
-            texture,
+            handle,
             usage,
             access
     });
+
     return *this;
 }
 
-PassBuilder& PassBuilder::bind_present_source(FGTextureHandle handle) {
+PassBuilder& PassBuilder::present(FGTextureHandle handle) {
     assert(m_type == PassType::Present);
-    FGTexture* texture = m_fg->m_textures.get(handle);
     
     // does need to be transfer src
+    // should this even be used? it will fracture transitions into two commands
     m_textures.push_back(TextureBinding{
-            texture,
-            TextureUsage::ColorAttachment,
+            handle,
+            TextureUsage::TransferSrc,
             ResourceAccess::Read
     });
+
     
     // in m_execute_fn
-    m_execute_fn = [this, texture](PassContext ctx) {
+    m_execute_fn = [this, handle](PassContext ctx) {
         FrameGraph* fg = this->m_fg;
-        Swapchain* swapchain = fg->m_swapchain;
+        //Swapchain* swapchain = fg->m_swapchain;
+        
+        // BOTH THESE HANDLES ARE INVALID
+        FGTexture* texture = fg->m_textures.get(handle);
+        FGTexture* swapchain = fg->m_textures.get(ctx.swapchain_handle);
+        
+            
         // copy image
         VkImage& src_image = texture->get_resource()->image;
         VkExtent2D src_extent = texture->get_resource()->extent;
 
-        VkImage& swapchain_image = swapchain->get_image(ctx.swapchain_idx);
-        VkExtent2D swapchain_extent = swapchain->get_extent();
+        VkImage& swapchain_image = swapchain->get_resource()->image;
+        VkExtent2D swapchain_extent = swapchain->get_resource()->extent;
         
         // should i use handles?
         util::copy_image_to_image(ctx.cmd, src_image, swapchain_image,
@@ -67,9 +69,9 @@ PassBuilder& PassBuilder::bind_present_source(FGTextureHandle handle) {
 }
 
 PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
-    FGTexture* texture = m_fg->m_textures.get(handle);
     
-    execute([texture, color](PassContext ctx) {
+    execute([this, handle, color](PassContext ctx) {
+        FGTexture* texture = this->m_fg->m_textures.get(handle);
         VkClearColorValue clear_value = {
             color.r, color.g, color.b, color.a
         };

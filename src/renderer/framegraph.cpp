@@ -11,12 +11,20 @@ void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
     m_swapchain = swapchain;
 }
 
-FGBufferHandle FrameGraph::create_buffer(BufferDesc desc) {
-    return m_buffers.create(desc);
+FGBufferHandle FrameGraph::create_buffer(const std::string& name,
+        BufferDesc desc) {
+    return m_buffers.create(name, desc);
 }
 
-FGTextureHandle FrameGraph::create_texture(TextureDesc desc) {
-    return m_textures.create(desc);
+FGTextureHandle FrameGraph::create_texture(const std::string& name,
+        TextureDesc desc) {
+    return m_textures.create(name, desc);
+}
+
+FGTextureHandle FrameGraph::register_external_texture(const std::string& name,
+        TextureDesc desc, TextureResource* resource) {
+    FGTextureHandle h = m_textures.create(name, desc, resource);
+    return h;
 }
 
 PassBuilder FrameGraph::create_pass(const std::string& name, PassType type) {
@@ -32,15 +40,9 @@ void FrameGraph::add_pass(std::unique_ptr<Pass> pass) {
 
 void FrameGraph::compile() {
     // validate each pass
-    // transient resources?
     // build exec order
    
     build_dependencies();
-
-    allocate_resources();
-
-    collect_pass_barriers();
-    compile_pass_barriers();
     
     // what else
 
@@ -94,7 +96,8 @@ void FrameGraph::build_dependencies() {
         // TODO: THIS ASSUMES PASSES COME IN ORDER
         // DONT, CONSIDER OTHER ISSUES
         for(const BufferBinding& b : pass->get_buffers()) {
-            Pass* last = b.buffer->get_last_writer();
+            FGBuffer* buffer = m_buffers.get(b.handle);
+            Pass* last = buffer->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
@@ -103,7 +106,8 @@ void FrameGraph::build_dependencies() {
         
         // in the future this will have to be done per subresource
         for(const TextureBinding& t : pass->get_textures()) {
-            Pass* last = t.texture->get_last_writer();
+            FGTexture* texture = m_textures.get(t.handle);
+            Pass* last = texture->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
@@ -114,12 +118,6 @@ void FrameGraph::build_dependencies() {
     // TODO: CULL
 }
 
-void collect_texture(std::vector<FGTexture*> ctx, Pass* pass,
-        FGTexture* texture) {
-    // check if first pass?
-    
-    // collect allocations
-}
 
 void FrameGraph::allocate_resources() {
     // first collect
@@ -129,7 +127,7 @@ void FrameGraph::allocate_resources() {
         Pass* pass = m_passes[i].get();
         
         for(const BufferBinding& b: pass->get_buffers()) {
-            FGBuffer* buffer = b.buffer;
+            FGBuffer* buffer = m_buffers.get(b.handle);
             if(buffer->is_transient() && !buffer->collected()) {
                 transient_buffers.push_back(buffer);
                 buffer->collect();
@@ -137,7 +135,7 @@ void FrameGraph::allocate_resources() {
         }
 
         for(const TextureBinding& t: pass->get_textures()) {
-            FGTexture* texture = t.texture;
+            FGTexture* texture = m_textures.get(t.handle); 
             if(texture->is_transient() && !texture->collected()) {
                 transient_textures.push_back(texture);
                 texture->collect();
@@ -165,39 +163,10 @@ void FrameGraph::allocate_resources() {
 }
 
 void add_buffer_barrier(const BufferBinding& bb, Pass* pass) {
-    FGBuffer* buffer = bb.buffer;
 
-    BufferTransitionInfo bti = {
-        buffer->get_handle(),
-        buffer->get_usage(),         // src
-        buffer->get_access(),        // src
-        bb.usage,                   // dst
-        bb.access                   // dst
-    };
-
-    pass->add_buffer_transition(bti);
-    
-    // don't forget to change state
-    buffer->set_usage(bb.usage);
-    buffer->set_access(bb.access);
 }
 
 void add_texture_barrier(const TextureBinding& tb, Pass* pass) {
-    FGTexture* texture = tb.texture;
-
-    TextureTransitionInfo tti = {
-        texture->get_handle(),
-        texture->get_usage(),        // src
-        texture->get_access(),       // src
-        tb.usage,                   // dst
-        tb.access                   // dst
-    };
-
-    pass->add_texture_transition(tti);
-    
-    // don't forget to change state
-    texture->set_usage(tb.usage);
-    texture->set_access(tb.access);
 }
 
 void FrameGraph::collect_pass_barriers() {
@@ -209,18 +178,45 @@ void FrameGraph::collect_pass_barriers() {
         }
         
         for(const BufferBinding& b : pass->get_buffers()) {
-            add_buffer_barrier(b, pass); 
+            FGBuffer* buffer = m_buffers.get(b.handle);
+
+            BufferTransitionInfo bti = {
+                buffer->get_handle(),
+                buffer->get_usage(),         // src
+                buffer->get_access(),        // src
+                b.usage,                   // dst
+                b.access                   // dst
+            };
+
+            pass->add_buffer_transition(bti);
+
+            // don't forget to change state
+            buffer->set_usage(b.usage);
+            buffer->set_access(b.access);
         }
 
         for(const TextureBinding& t : pass->get_textures()) {
-            add_texture_barrier(t, pass);
+            FGTexture* texture = m_textures.get(t.handle); 
+            TextureTransitionInfo tti = {
+                texture->get_handle(),
+                texture->get_usage(),        // src
+                texture->get_access(),       // src
+                t.usage,                   // dst
+                t.access                   // dst
+            };
+
+            pass->add_texture_transition(tti);
+
+            // don't forget to change state
+            texture->set_usage(t.usage);
+            texture->set_access(t.access);
         }
     }
 }
 
 
 // Unreal uses a transition_create_queue, added to by add_x_barrier
-void FrameGraph::compile_pass_barriers() {
+void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
 
@@ -256,10 +252,6 @@ void FrameGraph::compile_pass_barriers() {
 
         for(TextureTransitionInfo tti : pass->get_texture_transitions()) {
             FGTexture* texture = m_textures.get(tti.handle);
-            if(texture == nullptr) {
-                // TODO: add fail check
-            }
-
             TextureResource* tr = texture->get_resource();
 
             VkPipelineStageFlags2 src_stage = deduce_pipeline_flags(
@@ -302,16 +294,52 @@ void FrameGraph::compile_pass_barriers() {
                 }
             };
 
+
+            pass->add_vk_image_barrier(img_b);
+        }
+        
+        // convert swapchain image to TransferDst
+        if(pass->get_type() == PassType::Present) {
+            FGTextureHandle handle = fctx.get_swapchain_handle();
+            FGTexture* texture = m_textures.get(handle);
+            TextureResource* tr = texture->get_resource();
+
+            VkImageMemoryBarrier2 img_b = {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .pNext = nullptr,
+                .srcStageMask = VK_PIPELINE_STAGE_2_NONE, 
+                .srcAccessMask = VK_ACCESS_2_NONE,
+                .dstStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = tr->image,
+                .subresourceRange = {
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = VK_REMAINING_MIP_LEVELS,
+                    .baseArrayLayer = 0,
+                    .layerCount = VK_REMAINING_ARRAY_LAYERS
+                }
+            };
+
             pass->add_vk_image_barrier(img_b);
         }
     }
 }
 
-void FrameGraph::execute(FrameContext fctx) {
-    if(m_dirty) {
-        compile();
-    }
+void FrameGraph::execute(FrameContext& fctx) {
+    //if(m_dirty) {
+    
+    compile();
 
+    // steps that use the underlying resources
+    allocate_resources();
+    
+    collect_pass_barriers();
+    compile_pass_barriers(fctx);
 
     // execute passes in order
     for(std::unique_ptr<Pass>& pass : m_passes) {
@@ -333,9 +361,12 @@ void FrameGraph::execute(FrameContext fctx) {
 
             vkCmdPipelineBarrier2(fctx.get_cmd_buffer(), &dep_info);
         }
-
+        
         pass->execute(fctx.pass_view());
+
     }
+    m_buffers.reset();
+    m_textures.reset();
 }
 
 // DEDUCE FLAGS
@@ -351,6 +382,10 @@ VkAccessFlags2 FrameGraph::deduce_access_flags(BufferUsage usage) {
             return VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
         case BufferUsage::IndexBuffer:
             return VK_ACCESS_2_INDEX_READ_BIT;
+        case BufferUsage::TransferSrc:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case BufferUsage::TransferDst:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
         default:
             return VK_ACCESS_2_NONE;
     }
@@ -370,6 +405,10 @@ VkAccessFlags2 FrameGraph::deduce_access_flags(TextureUsage usage) {
         case TextureUsage::StorageImage:
             return VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+        case TextureUsage::TransferSrc:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case TextureUsage::TransferDst:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
         default:
             return VK_ACCESS_2_NONE;
     }
@@ -390,59 +429,47 @@ VkImageLayout FrameGraph::deduce_layout(TextureUsage usage) {
         case TextureUsage::StorageImage:
             // TODO: IS THIS OPTIMIZABLE?
             return VK_IMAGE_LAYOUT_GENERAL;
+        case TextureUsage::TransferSrc:
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        case TextureUsage::TransferDst:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         default:
             return VK_IMAGE_LAYOUT_UNDEFINED;
     }
 }
 
 VkPipelineStageFlags2 FrameGraph::deduce_pipeline_flags(BufferUsage usage, PassType type) {
-    switch(type) {
-        case PassType::Graphics:
-            switch(usage) {
-                case BufferUsage::StorageBuffer:
-                    return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-                case BufferUsage::UniformBuffer:
-                    return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-                case BufferUsage::VertexBuffer:
-                    return VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-                case BufferUsage::IndexBuffer:
-                    return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
-            }
-        case PassType::Compute:
-            return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        case PassType::Transfer:
-            // TODO: NARROW IF NEEDED
+    switch(usage) {
+        case BufferUsage::StorageBuffer:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case BufferUsage::UniformBuffer:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case BufferUsage::VertexBuffer:
+            return VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+        case BufferUsage::IndexBuffer:
+            return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
+        case BufferUsage::TransferSrc:
+        case BufferUsage::TransferDst:
             return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
-        case PassType::Present:
-            // BOTTOM OF PIPE OBSOLETE
-            return VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         default:
             return VK_PIPELINE_STAGE_2_NONE;
     }
 }
 
 VkPipelineStageFlags2 FrameGraph::deduce_pipeline_flags(TextureUsage usage, PassType type) {
-    switch(type) {
-        case PassType::Graphics:
-            switch(usage) {
-                case TextureUsage::ColorAttachment:
-                    return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                case TextureUsage::DepthAttachment:
-                    return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | 
-                        VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-                case TextureUsage::InputAttachment:
-                    return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-                case TextureUsage::StorageImage:
-                    return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-            }
-        case PassType::Compute:
-            return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        case PassType::Transfer:
-            // TODO: NARROW IF NEEDED
+    switch(usage) {
+        case TextureUsage::ColorAttachment:
+            return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case TextureUsage::DepthAttachment:
+            return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | 
+                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+        case TextureUsage::InputAttachment:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        case TextureUsage::StorageImage:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case TextureUsage::TransferSrc:
+        case TextureUsage::TransferDst:
             return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
-        case PassType::Present:
-            // BOTTOM OF PIPE OBSOLETE
-            return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         default:
             return VK_PIPELINE_STAGE_2_NONE;
     }

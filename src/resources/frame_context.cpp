@@ -1,10 +1,10 @@
-#include "foxglove/frame/frame_context.h"
+#include "foxglove/resources/frame_context.h"
 
 #include <cstdio>
 FrameContext::FrameContext() {}
 FrameContext::~FrameContext() {}
 
-void FrameContext::init(VulkanContext& ctx, VkExtent3D ext) {
+void FrameContext::init(VulkanContext& ctx) {
     VkDevice device = ctx.get_device();
 
     // init commands
@@ -49,27 +49,9 @@ void FrameContext::init(VulkanContext& ctx, VkExtent3D ext) {
     vkCreateFence(device, &fence_create_info, nullptr, &m_render_fence);
     vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_swapchain_semaphore);
     vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_render_semaphore);
-
-    // TODO: REMOVE DRAW IMAGE
-    // init draw image
-    VkImageUsageFlags draw_image_usages = VkImageUsageFlags(
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_STORAGE_BIT |
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-            );
-
-    m_draw_image.create(
-            device,
-            ctx.get_allocator(),
-            VK_FORMAT_R16G16B16A16_SFLOAT,
-            ext,
-            draw_image_usages);
 }
 
 void FrameContext::cleanup(VkDevice device, VmaAllocator allocator) {
-    m_draw_image.cleanup(device, allocator);
-
     vkDestroyCommandPool(
             device,
             m_cmd_pool,

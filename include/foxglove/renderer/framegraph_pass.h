@@ -2,8 +2,7 @@
 
 #include "foxglove/resources/handle.h"
 #include "foxglove/resources/fg_resource_types.h"
-
-#include "foxglove/frame/frame_context.h"
+#include "foxglove/resources/frame_context.h"
 
 #include "foxglove/core/types.h"
 
@@ -25,13 +24,13 @@ class FrameGraph;
 // the resource's internal variables refer to its current state
 // these are used to construct transitioninfo structs
 struct BufferBinding {
-    FGBuffer* buffer;
+    FGBufferHandle handle;
     BufferUsage usage;
     ResourceAccess access;
 };
 
 struct TextureBinding {
-    FGTexture* texture;
+    FGTextureHandle handle;
     TextureUsage usage;
     ResourceAccess access;
 };
@@ -169,12 +168,12 @@ public:
     PassBuilder& bind_texture(FGTextureHandle handle, 
             TextureUsage usage, ResourceAccess access);
     
-    PassBuilder& bind_present_source(FGTextureHandle handle);
+    PassBuilder& present(FGTextureHandle handle);
 
     PassBuilder& clear_color(FGTextureHandle handle, Color color);
     PassBuilder& execute(std::function<void(PassContext)> execute_fn);
 
-    Pass& build();
+    Pass& build();    
 private:
     FrameGraph* m_fg;
     std::string m_name;

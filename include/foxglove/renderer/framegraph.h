@@ -28,13 +28,15 @@ class FrameGraph {
 public:
     void init(VulkanContext* ctx, Swapchain* swapchain);
 
-    FGBufferHandle create_buffer(BufferDesc desc);
-    FGTextureHandle create_texture(TextureDesc desc);
+    FGBufferHandle create_buffer(const std::string& name, BufferDesc desc);
+    FGTextureHandle create_texture(const std::string& name, TextureDesc desc);
+    FGTextureHandle register_external_texture(const std::string& name,
+            TextureDesc desc, TextureResource* resource);
 
     PassBuilder create_pass(const std::string& name, PassType type);
 
     void compile();
-    void execute(FrameContext ctx);
+    void execute(FrameContext& ctx);
 private:
     void add_pass(std::unique_ptr<Pass> pass);
     
@@ -42,7 +44,7 @@ private:
     void allocate_resources();
 
     void collect_pass_barriers();
-    void compile_pass_barriers();
+    void compile_pass_barriers(FrameContext& fctx);
 
 
     VkAccessFlags2 deduce_access_flags(BufferUsage usage);

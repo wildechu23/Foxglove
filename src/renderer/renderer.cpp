@@ -22,17 +22,15 @@ void Renderer::init() {
 
     m_fg.init(&m_ctx, &m_swapchain);
     
-    printf("draw images\n");
-
     // initialize draw images
-    VkExtent3D draw_image_extent = {
+    /*VkExtent3D draw_image_extent = {
         m_window.get_width(),
         m_window.get_height(),
         1
-    };
+    };*/
 
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
-        m_frames[i].init(m_ctx, draw_image_extent);
+        m_frames[i].init(m_ctx);
     }
 }
 
@@ -53,9 +51,22 @@ void Renderer::draw() {
             nullptr, 
             &swapchain_image_idx);
     
-    // TODO: ADDED update framecontext (framecontext has no setters besides this)
-    fctx.set_swapchain_idx(swapchain_image_idx);
+    // register swapchain image
+    TextureDesc swapchain_image_desc = {
+        .extent = m_swapchain.get_extent(),
+        .format = m_swapchain.get_format(),
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    };
 
+    TextureResource* swap_ptr =  new TextureResource;
+    swap_ptr->image = m_swapchain.get_image(swapchain_image_idx);
+    swap_ptr->view = m_swapchain.get_image_view(swapchain_image_idx);
+    swap_ptr->extent = m_swapchain.get_extent();
+
+    FGTextureHandle swapchain_handle = m_fg.register_external_texture(
+            "swapchain", swapchain_image_desc, swap_ptr);
+    fctx.set_swapchain_handle(swapchain_handle);
+    
 	VkCommandBuffer cmd = fctx.get_cmd_buffer();
     vkResetCommandBuffer(cmd, 0);
 
@@ -68,21 +79,7 @@ void Renderer::draw() {
 
     // start of command buffer
 	vkBeginCommandBuffer(cmd, &cmd_begin_info);
-
     m_fg.execute(fctx);
-	
-    //utils::transition_image(cmd, draw_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    // add draws here
-    
-   // utils::transition_image(cmd, draw_image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    //utils::transition_image(cmd, swapchain_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-    //utils::copy_image_to_image(cmd, draw_image, swapchain_image, draw_image_extent, swapchain_extent);
-
-    //utils::transition_image(cmd, m_swapchain.get_image(swapchain_image_idx), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-    
-
 	vkEndCommandBuffer(cmd);
 
     // end of command buffer

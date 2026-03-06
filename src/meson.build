@@ -4,7 +4,6 @@ subdir('window')
 subdir('renderer')
 subdir('resources')
 subdir('memory')
-subdir('frame')
 
 sources = [
   core_sources,
@@ -13,7 +12,6 @@ sources = [
   renderer_sources,
   resources_sources,
   memory_sources,
-  frame_sources,
 ]
 
 foxglove = shared_library(

@@ -14,7 +14,9 @@ public:
     VkSwapchainKHR& get_swapchain() { return m_swapchain; }
 
     VkImage& get_image(int i) { return m_images[i]; }
+    VkImageView& get_image_view(int i) { return m_image_views[i]; }
     size_t get_image_count() { return m_images.size(); }
+    VkFormat get_format() { return m_image_format; } 
     VkExtent2D get_extent() { return m_extent; }
 
 private:
