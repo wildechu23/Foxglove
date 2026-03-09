@@ -11,6 +11,11 @@ enum class TypeID : uint8_t {
     Texture = 2
 };
 
+struct ResourceContext {
+    VkDevice device;
+    VmaAllocator allocator;
+};
+
 // Resources
 // TODO: MOVE OUT IMPLEMENTATION?
 // MOVE TO VULKANBUFFERRESOURCE, KEEP GENERIC VERSION
@@ -39,9 +44,9 @@ public:
         size = info.size;
     }
     
-    void destroy(VmaAllocator allocator) {
+    void destroy(ResourceContext ctx) {
         if (buffer != VK_NULL_HANDLE) {
-            vmaDestroyBuffer(allocator, buffer, allocation);
+            vmaDestroyBuffer(ctx.allocator, buffer, allocation);
             buffer = VK_NULL_HANDLE;
         }
     }
@@ -108,9 +113,9 @@ public:
         extent = desc.extent;
     }
     
-    void destroy(VkDevice device, VmaAllocator allocator) {
+    void destroy(ResourceContext ctx) {
         // TODO: add check that its initialized
-        vkDestroyImageView(device, view, nullptr);
-        vmaDestroyImage(allocator, image, allocation);
+        vkDestroyImageView(ctx.device, view, nullptr);
+        vmaDestroyImage(ctx.allocator, image, allocation);
     }
 };

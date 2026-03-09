@@ -49,7 +49,6 @@ PassBuilder& PassBuilder::present(FGTextureHandle handle) {
         FGTexture* texture = fg->m_textures.get(handle);
         FGTexture* swapchain = fg->m_textures.get(ctx.swapchain_handle);
         
-            
         // copy image
         VkImage& src_image = texture->get_resource()->image;
         VkExtent2D src_extent = texture->get_resource()->extent;

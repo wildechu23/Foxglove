@@ -31,12 +31,24 @@ void Swapchain::init(VkDevice device, VkPhysicalDevice physical_device, VkSurfac
     m_swapchain = vkb_swapchain.swapchain;
     m_images = vkb_swapchain.get_images().value();
     m_image_views = vkb_swapchain.get_image_views().value();
+
+
+    VkSemaphoreCreateInfo semaphore_create_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = nullptr
+    };
+    
+    m_render_semaphores = std::vector<VkSemaphore>(get_image_count());
+    for(VkSemaphore& s : m_render_semaphores) {
+        vkCreateSemaphore(device, &semaphore_create_info, nullptr, &s);
+    }
 }
 
 void Swapchain::cleanup() {
     vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
-    for(size_t i = 0; i < m_image_views.size(); ++i) {
-        vkDestroyImageView(m_device, m_image_views[i], nullptr);
+    for(size_t i = 0; i < get_image_count(); ++i) {
+        vkDestroyImageView(m_device, m_image_views[i], nullptr);		
+        vkDestroySemaphore(m_device, m_render_semaphores[i], nullptr);
     }
 }

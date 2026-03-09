@@ -18,7 +18,10 @@ public:
     size_t get_image_count() { return m_images.size(); }
     VkFormat get_format() { return m_image_format; } 
     VkExtent2D get_extent() { return m_extent; }
-
+    
+    VkSemaphore get_render_semaphore(int i) {
+        return m_render_semaphores[i];
+    }
 private:
     VkDevice m_device;
     VkPhysicalDevice m_physical_device;
@@ -30,4 +33,6 @@ private:
 
     std::vector<VkImage> m_images;
     std::vector<VkImageView> m_image_views;
+    
+    std::vector<VkSemaphore> m_render_semaphores;
 };

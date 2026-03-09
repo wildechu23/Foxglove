@@ -16,8 +16,8 @@ class FGTexture;
 template<typename T, typename HandleT>
 class FGHandleRegistry {
 public:
-    FGHandleRegistry() {}
-    ~FGHandleRegistry() { reset(); }
+    FGHandleRegistry() = default;
+    ~FGHandleRegistry() = default;
 
     /*
     HandleT add(T resource) {
@@ -38,6 +38,7 @@ public:
         return handle;
     }
 
+    // push to deletion queue before reset so no leak
     void reset() {
         m_allocator.reset();
         m_array.clear();

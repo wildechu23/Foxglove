@@ -29,19 +29,23 @@ void Renderer::init() {
         1
     };*/
 
+    //m_frames = std::vector<FrameContext>(m_swapchain.get_image_count());
+
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
         m_frames[i].init(m_ctx);
     }
 }
 
+
 void Renderer::draw() {
     VkDevice device = m_ctx.get_device();
 
     FrameContext& fctx = get_current_frame();
-
     vkWaitForFences(device, 1, &fctx.get_render_fence(), true, UINT64_MAX);
     vkResetFences(device, 1, &fctx.get_render_fence());
 
+	fctx.get_deletion_queue().flush();
+    
     uint32_t swapchain_image_idx;
     vkAcquireNextImageKHR(
             device,
@@ -50,6 +54,9 @@ void Renderer::draw() {
             fctx.get_swapchain_semaphore(), 
             nullptr, 
             &swapchain_image_idx);
+
+    VkSemaphore render_semaphore = m_swapchain.get_render_semaphore(
+            swapchain_image_idx);
     
     // register swapchain image
     TextureDesc swapchain_image_desc = {
@@ -58,7 +65,7 @@ void Renderer::draw() {
         .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
     };
 
-    TextureResource* swap_ptr =  new TextureResource;
+    TextureResource* swap_ptr = new TextureResource;
     swap_ptr->image = m_swapchain.get_image(swapchain_image_idx);
     swap_ptr->view = m_swapchain.get_image_view(swapchain_image_idx);
     swap_ptr->extent = m_swapchain.get_extent();
@@ -103,7 +110,7 @@ void Renderer::draw() {
 	VkSemaphoreSubmitInfo signal_info = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.pNext = nullptr,
-		.semaphore = fctx.get_render_semaphore(),
+		.semaphore = render_semaphore, 
 		.value = 1,
 		.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
 		.deviceIndex = 0
@@ -127,7 +134,7 @@ void Renderer::draw() {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = nullptr,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &fctx.get_render_semaphore(),
+		.pWaitSemaphores = &render_semaphore,
 		.swapchainCount = 1,
 		.pSwapchains = &m_swapchain.get_swapchain(),
 		.pImageIndices = &swapchain_image_idx,
@@ -145,7 +152,8 @@ void Renderer::cleanup() {
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
         m_frames[i].cleanup(m_ctx.get_device(), m_ctx.get_allocator());
     }
-
+    
+    m_fg.reset();
     m_swapchain.cleanup();
     m_ctx.cleanup();
 }

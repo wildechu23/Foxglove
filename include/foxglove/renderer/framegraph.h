@@ -27,6 +27,7 @@ struct ResourceState {
 class FrameGraph {
 public:
     void init(VulkanContext* ctx, Swapchain* swapchain);
+    void reset();
 
     FGBufferHandle create_buffer(const std::string& name, BufferDesc desc);
     FGTextureHandle create_texture(const std::string& name, TextureDesc desc);
@@ -41,11 +42,10 @@ private:
     void add_pass(std::unique_ptr<Pass> pass);
     
     void build_dependencies();
-    void allocate_resources();
+    void allocate_resources(FrameContext& fctx);
 
     void collect_pass_barriers();
     void compile_pass_barriers(FrameContext& fctx);
-
 
     VkAccessFlags2 deduce_access_flags(BufferUsage usage);
     VkAccessFlags2 deduce_access_flags(TextureUsage usage);

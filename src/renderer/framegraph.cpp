@@ -119,7 +119,7 @@ void FrameGraph::build_dependencies() {
 }
 
 
-void FrameGraph::allocate_resources() {
+void FrameGraph::allocate_resources(FrameContext& fctx) {
     // first collect
     std::vector<FGBuffer*> transient_buffers;
     std::vector<FGTexture*> transient_textures;
@@ -151,6 +151,13 @@ void FrameGraph::allocate_resources() {
                 m_ctx->get_allocator(),
                 buffer->get_desc());
         buffer->set_resource(resource);
+
+        fctx.get_deletion_queue().push_function([&, resource]() {
+            resource->destroy({
+                m_ctx->get_device(), 
+                m_ctx->get_allocator()
+            });
+        });
     }
 
     for(FGTexture* texture : transient_textures) {
@@ -159,6 +166,13 @@ void FrameGraph::allocate_resources() {
                 m_ctx->get_allocator(),
                 texture->get_desc());
         texture->set_resource(resource);
+
+        fctx.get_deletion_queue().push_function([&, resource]() {
+            resource->destroy({
+                m_ctx->get_device(), 
+                m_ctx->get_allocator()
+            });
+        });
     }
 }
 
@@ -249,10 +263,11 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             pass->add_vk_buffer_barrier(buf_b);
 
         }
-
+        
         for(TextureTransitionInfo tti : pass->get_texture_transitions()) {
             FGTexture* texture = m_textures.get(tti.handle);
             TextureResource* tr = texture->get_resource();
+
 
             VkPipelineStageFlags2 src_stage = deduce_pipeline_flags(
                     tti.src_usage, pass->get_type());
@@ -272,6 +287,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             } else {
                 aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
             }
+           // std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
 
             VkImageMemoryBarrier2 img_b = {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -311,7 +327,8 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
                 .srcAccessMask = VK_ACCESS_2_NONE,
                 .dstStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
                 .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                //.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -332,18 +349,16 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
 
 void FrameGraph::execute(FrameContext& fctx) {
     //if(m_dirty) {
-    
     compile();
 
     // steps that use the underlying resources
-    allocate_resources();
+    allocate_resources(fctx);
     
     collect_pass_barriers();
     compile_pass_barriers(fctx);
 
     // execute passes in order
     for(std::unique_ptr<Pass>& pass : m_passes) {
-
         std::vector<VkBufferMemoryBarrier2>& buffer_barriers = 
             pass->get_vk_buffer_barriers();
         std::vector<VkImageMemoryBarrier2>& image_barriers = 
@@ -365,8 +380,15 @@ void FrameGraph::execute(FrameContext& fctx) {
         pass->execute(fctx.pass_view());
 
     }
+    reset();
+}
+
+
+// dont delete right away, send to deletion queue
+void FrameGraph::reset() {
     m_buffers.reset();
     m_textures.reset();
+    m_passes.clear();
 }
 
 // DEDUCE FLAGS

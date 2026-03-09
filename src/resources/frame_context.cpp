@@ -48,7 +48,7 @@ void FrameContext::init(VulkanContext& ctx) {
 
     vkCreateFence(device, &fence_create_info, nullptr, &m_render_fence);
     vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_swapchain_semaphore);
-    vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_render_semaphore);
+    //vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_render_semaphore);
 }
 
 void FrameContext::cleanup(VkDevice device, VmaAllocator allocator) {
@@ -58,6 +58,8 @@ void FrameContext::cleanup(VkDevice device, VmaAllocator allocator) {
             nullptr);
 
     vkDestroyFence(device, m_render_fence, nullptr);
-    vkDestroySemaphore(device, m_render_semaphore, nullptr);
+    //vkDestroySemaphore(device, m_render_semaphore, nullptr);
     vkDestroySemaphore(device, m_swapchain_semaphore, nullptr);
+
+    m_deletion_queue.flush();
 }
