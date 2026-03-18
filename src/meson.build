@@ -17,7 +17,7 @@ sources = [
 foxglove = shared_library(
   'foxglove',
   sources,
-  include_directories: [inc, include_directories('.'), vkb_inc, vma_inc],
+  include_directories: [inc, third_party_inc],
   link_with: vkbootstrap_lib,
   dependencies: [vulkan_dep, glfw_dep, glm_dep],
   install: true

@@ -9,6 +9,15 @@
 void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
     m_ctx = ctx;
     m_swapchain = swapchain;
+	
+    //create a descriptor pool that will hold 10 sets with 1 image each
+    std::vector<DescriptorAllocator::PoolSizeRatio> sizes = {
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+	};
+	
+    m_desc_allocator.init_pool(m_ctx->get_device(), 10, sizes);
 }
 
 FGBufferHandle FrameGraph::create_buffer(const std::string& name,
@@ -43,6 +52,8 @@ void FrameGraph::compile() {
     // build exec order
    
     build_dependencies();
+
+    collect_descriptors();
     
     // what else
 
@@ -118,6 +129,55 @@ void FrameGraph::build_dependencies() {
     // TODO: CULL
 }
 
+void FrameGraph::collect_pass_bindings(DescriptorLayoutBuilder& builder,
+        Pass* pass) {
+
+    int binding_num = 0;
+    for(const BufferBinding& b : pass->get_buffers()) {
+        // TODO: edit to add deduction
+        builder.add_binding(binding_num++, 
+                deduce_descriptor_type(b.usage));
+    }
+    for(const TextureBinding& t : pass->get_textures()) {
+        // TODO: edit to add deduction
+        builder.add_binding(binding_num++,
+                deduce_descriptor_type(t.usage));
+    }
+}
+
+
+void FrameGraph::collect_descriptors() {
+    std::vector<uint32_t> pass_ids;
+    std::vector<VkDescriptorSetLayout> layouts;
+    for(size_t i = 0; i < m_passes.size(); i++) {
+        Pass* pass = m_passes[i].get();
+        
+        DescriptorLayoutBuilder builder;
+        if(pass->get_type() == PassType::Compute) {
+            pass_ids.push_back(i);
+            collect_pass_bindings(builder, pass);
+            layouts.push_back(builder.build(m_ctx->get_device(), 
+                        VK_SHADER_STAGE_COMPUTE_BIT));
+        } else if(pass->get_type() == PassType::Graphics) {
+            pass_ids.push_back(i);
+            collect_pass_bindings(builder, pass);
+            // TODO: NARROW THIS MAYBE
+            layouts.push_back(builder.build(m_ctx->get_device(), 
+                        VK_SHADER_STAGE_ALL_GRAPHICS));
+        }
+    }
+    
+    // change from pass_ids to batch struct of vectors?
+    if(!layouts.empty()) {
+        std::vector<VkDescriptorSet> sets = m_desc_allocator.allocate(
+                m_ctx->get_device(), layouts);
+        for(size_t i = 0; i < sets.size(); i++) {
+            Pass* pass = m_passes[pass_ids[i]].get();
+            pass->set_descriptor_info(layouts[i], sets[i]);
+        }
+    }
+}
+
 
 void FrameGraph::allocate_resources(FrameContext& fctx) {
     // first collect
@@ -126,7 +186,7 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
         
-        for(const BufferBinding& b: pass->get_buffers()) {
+        for(const BufferBinding& b : pass->get_buffers()) {
             FGBuffer* buffer = m_buffers.get(b.handle);
             if(buffer->is_transient() && !buffer->collected()) {
                 transient_buffers.push_back(buffer);
@@ -497,4 +557,27 @@ VkPipelineStageFlags2 FrameGraph::deduce_pipeline_flags(TextureUsage usage, Pass
     }
 }
 
+VkDescriptorType FrameGraph::deduce_descriptor_type(BufferUsage usage) {
+    switch(usage) {
+        case BufferUsage::StorageBuffer:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case BufferUsage::UniformBuffer:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        default:
+            // TODO: SHOULD ERROR
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+    }
+}
 
+VkDescriptorType FrameGraph::deduce_descriptor_type(TextureUsage usage) {
+   switch(usage) {
+        case TextureUsage::InputAttachment:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        case TextureUsage::StorageImage:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        default:
+            // TODO: SHOULD ERROR
+            return VK_DESCRIPTOR_TYPE_SAMPLER; 
+    }
+
+}

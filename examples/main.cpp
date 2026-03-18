@@ -8,8 +8,15 @@ int main() {
     Window window(width, height, "Test Engine");
     window.init();
 
+
+    
     Renderer renderer(window);
     FrameGraph& fg = renderer.get_fg();
+    ShaderLibrary& sl = renderer.get_sl();
+
+    std::filesystem::path path{"shaders/gradient.comp"};
+    ComputeShader* shader = sl.create_compute_shader(path);
+
 
     VkImageUsageFlags draw_image_usages = VkImageUsageFlags(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |

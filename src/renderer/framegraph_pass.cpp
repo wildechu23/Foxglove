@@ -42,6 +42,8 @@ PassBuilder& PassBuilder::present(FGTextureHandle handle) {
     
     // in m_execute_fn
     m_execute_fn = [this, handle](PassContext ctx) {
+        VkCommandBuffer cmd = ctx.cmd.m_cmd;
+        
         FrameGraph* fg = this->m_fg;
         //Swapchain* swapchain = fg->m_swapchain;
         
@@ -57,11 +59,12 @@ PassBuilder& PassBuilder::present(FGTextureHandle handle) {
         VkExtent2D swapchain_extent = swapchain->get_resource()->extent;
         
         // should i use handles?
-        util::copy_image_to_image(ctx.cmd, src_image, swapchain_image,
+        util::copy_image_to_image(cmd, 
+                src_image, swapchain_image,
                 src_extent, swapchain_extent);
 
         // swap
-        util::transition_image_to_present(ctx.cmd, swapchain_image);
+        util::transition_image_to_present(cmd, swapchain_image);
     };
 
     return *this;
@@ -81,7 +84,8 @@ PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
             0, VK_REMAINING_ARRAY_LAYERS
         };
         // storage_image -> general?
-        vkCmdClearColorImage(ctx.cmd, texture->get_resource()->image,
+        VkImage image = texture->get_resource()->image;
+        vkCmdClearColorImage(ctx.cmd.m_cmd, image, 
                 VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &clear_range);
     });
     return *this;

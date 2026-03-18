@@ -4,6 +4,7 @@
 #include "foxglove/vulkan/vulkan_context.h"
 #include "foxglove/vulkan/swapchain.h"
 #include "foxglove/resources/frame_context.h"
+#include "foxglove/resources/shader_library.h"
 #include "foxglove/renderer/framegraph.h"
 
 #include <vector>
@@ -18,6 +19,7 @@ public:
     void cleanup();
 
     FrameGraph& get_fg() { return m_fg; }
+    ShaderLibrary& get_sl() { return m_sl; }
 private:
     int m_frame_num{0};
     FrameContext& get_current_frame() { return m_frames[m_frame_num % FRAME_OVERLAP]; };
@@ -28,6 +30,8 @@ private:
     Swapchain m_swapchain;
 
     FrameGraph m_fg;
+
+    ShaderLibrary m_sl;
 
     // change to frames when using frame contexts 
     std::vector<FrameContext> m_frames{FRAME_OVERLAP};

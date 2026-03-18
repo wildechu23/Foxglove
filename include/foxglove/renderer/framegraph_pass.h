@@ -157,6 +157,11 @@ private:
     std::vector<VkImageMemoryBarrier2> m_vk_image_barriers;
 };
 
+class ComputePass : public Pass {
+public:
+    ComputePass(PassDesc desc) : Pass(desc) {}
+};
+
 
 class PassBuilder {
 public:

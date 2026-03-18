@@ -21,6 +21,7 @@ void Renderer::init() {
     );
 
     m_fg.init(&m_ctx, &m_swapchain);
+    m_sl.init(m_ctx.get_device());
     
     // initialize draw images
     /*VkExtent3D draw_image_extent = {

@@ -1,6 +1,7 @@
-project('foxglove', 'cpp')
+project('foxglove', 'cpp',
+  default_options : ['cpp_std=c++20'])
 
-add_global_arguments('-DSOME_TOKEN=value', language : 'cpp')
+add_global_arguments('-std=c++20', language: 'cpp')
 
 vulkan_dep = dependency('vulkan', required: true)
 glfw_dep = dependency('glfw3', required: true)

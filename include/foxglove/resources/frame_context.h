@@ -2,6 +2,7 @@
 
 #include "foxglove/vulkan/vulkan_context.h"
 #include "foxglove/vulkan/gpu_image.h"
+#include "foxglove/vulkan/command_buffer.h"
 
 #include "foxglove/resources/handle.h"
 
@@ -25,7 +26,7 @@ struct DeletionQueue {
 };
 
 struct PassContext {
-    VkCommandBuffer cmd;
+    CommandBuffer cmd;
     FGTextureHandle swapchain_handle;
 };
 
@@ -50,7 +51,7 @@ public:
     
     PassContext pass_view() const {
         return PassContext {
-            m_cmd_buffer,
+            CommandBuffer{m_cmd_buffer},
             m_swapchain_handle,
         };
     }

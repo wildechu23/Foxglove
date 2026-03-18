@@ -8,6 +8,7 @@
 
 #include "foxglove/vulkan/vulkan_context.h"
 #include "foxglove/vulkan/swapchain.h"
+#include "foxglove/vulkan/descriptors.h"
 
 
 #include <vulkan/vulkan.h>
@@ -44,6 +45,9 @@ private:
     void build_dependencies();
     void allocate_resources(FrameContext& fctx);
 
+    void collect_pass_bindings(DescriptorLayoutBuilder& builder, Pass* pass);
+    void collect_descriptors();
+
     void collect_pass_barriers();
     void compile_pass_barriers(FrameContext& fctx);
 
@@ -56,10 +60,15 @@ private:
     VkPipelineStageFlags2 deduce_pipeline_flags(TextureUsage usage, 
             PassType type);
 
+    VkDescriptorType deduce_descriptor_type(BufferUsage usage);
+    VkDescriptorType deduce_descriptor_type(TextureUsage usage);
+
     std::vector<std::unique_ptr<Pass>> m_passes;
 
     FGBufferRegistry m_buffers;
     FGTextureRegistry m_textures;
+    
+    DescriptorAllocator m_desc_allocator;
 
     VulkanContext* m_ctx;
     Swapchain* m_swapchain;
