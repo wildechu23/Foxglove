@@ -3,21 +3,13 @@
 #include "foxglove/resources/handle_registry.h"
 
 #include <string>
+#include <cassert>
 
 enum ResourceAccess {
     None = 0,
     Read = 1,
     Write = 2,
     ReadWrite = Read | Write
-};
-
-enum class TextureUsage {
-    ColorAttachment,
-    DepthAttachment,
-    InputAttachment,
-    StorageImage,
-    TransferSrc,
-    TransferDst
 };
 
 enum class BufferUsage {
@@ -30,16 +22,29 @@ enum class BufferUsage {
     // Accleration structure
 };
 
+enum class TextureUsage {
+    ColorAttachment,
+    DepthAttachment,
+    StencilAttachment,
+    DepthStencilAttachment,
+    InputAttachment,
+    StorageImage,
+    TransferSrc,
+    TransferDst
+};
+
 class Pass;
 
 // TODO: CONSIDER WRAPPER FRAGMENTATION OF GENERIC PHYSICAL RESOURCE
 class FGResource {
 public:
-    FGResource(const std::string& name) : m_name(name) {}
+    FGResource(const std::string& name, TypeID type) : 
+        m_name(name), m_type(type) {}
     ~FGResource() = default;
 
     std::string get_name() const { return m_name; }
     ResourceAccess get_access() const { return m_access; }
+    TypeID get_type() const { return m_type; }
     
     void set_access(ResourceAccess r) { m_access = r; }
     bool is_transient() const { return m_transient; }
@@ -53,6 +58,8 @@ protected:
     std::string m_name;
     ResourceAccess m_access;
 
+    TypeID m_type;
+
     bool m_transient = true;
     bool m_collected = false;
     
@@ -64,7 +71,7 @@ protected:
 class FGBuffer : public FGResource {
 public:
     FGBuffer(const std::string& name, BufferDesc desc) : 
-        FGResource(name), m_desc(desc) {}
+        FGResource(name, TypeID::Buffer), m_desc(desc) {}
     
     BufferDesc get_desc() const { return m_desc; }
     FGBufferHandle get_handle() const { return m_handle; }
@@ -86,9 +93,9 @@ private:
 class FGTexture : public FGResource {
 public:
     FGTexture(const std::string& name, TextureDesc desc) : 
-        FGResource(name), m_desc(desc) {}
+        FGResource(name, TypeID::Texture), m_desc(desc) {}
     FGTexture(const std::string& name, TextureDesc desc, TextureResource* resource) : 
-        FGResource(name), m_desc(desc), m_resource(resource) {
+        FGResource(name, TypeID::Texture), m_desc(desc), m_resource(resource) {
         m_transient = false;
     }
     

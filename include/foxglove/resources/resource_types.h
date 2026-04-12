@@ -65,10 +65,10 @@ public:
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = nullptr,
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .format = desc.format,
             .extent = {desc.extent.width, desc.extent.height, 1},
-            .mipLevels = 1,
-            .arrayLayers = 1,
+            .mipLevels = desc.mip_levels,
+            .arrayLayers = desc.array_layers,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = desc.usage

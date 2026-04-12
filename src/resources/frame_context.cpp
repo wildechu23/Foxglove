@@ -1,11 +1,20 @@
 #include "foxglove/resources/frame_context.h"
 
 #include <cstdio>
-FrameContext::FrameContext() {}
-FrameContext::~FrameContext() {}
+
+
 
 void FrameContext::init(VulkanContext& ctx) {
     VkDevice device = ctx.get_device();
+    
+    // TODO: PROBABLY INITIALIZE MORE
+	std::vector<DescriptorAllocator::PoolSizeRatio> sizes = {
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+	};
+
+	m_descriptor_allocator.init_pool(device, 10, sizes);
 
     // init commands
     VkCommandPoolCreateInfo cmd_pool_info = {
@@ -62,4 +71,6 @@ void FrameContext::cleanup(VkDevice device, VmaAllocator allocator) {
     vkDestroySemaphore(device, m_swapchain_semaphore, nullptr);
 
     m_deletion_queue.flush();
+
+	m_descriptor_allocator.destroy_pool(device);
 }

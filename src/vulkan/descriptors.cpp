@@ -92,11 +92,15 @@ VkDescriptorSet DescriptorAllocator::allocate(VkDevice device, VkDescriptorSetLa
 
 
 std::vector<VkDescriptorSet> DescriptorAllocator::allocate(VkDevice device, std::vector<VkDescriptorSetLayout>& layouts) {
+    if(layouts.size() == 0) {
+        return {};
+    }
+
     VkDescriptorSetAllocateInfo allocInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = nullptr,
         .descriptorPool = pool,
-        .descriptorSetCount = layouts.size(),
+        .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()
     };
 
@@ -105,5 +109,5 @@ std::vector<VkDescriptorSet> DescriptorAllocator::allocate(VkDevice device, std:
         throw std::runtime_error("Failed to allocate descriptor sets");
     }
 
-    return std::move(ds);
+    return ds;
 }

@@ -1,6 +1,6 @@
 renderer_sources = files(
   'renderer.cpp',
   'framegraph.cpp',
-  'framegraph_pass.cpp',
+  'builder.cpp',
   'util.cpp'
 )

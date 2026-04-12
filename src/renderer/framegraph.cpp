@@ -10,6 +10,7 @@ void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
     m_ctx = ctx;
     m_swapchain = swapchain;
 	
+    /*
     //create a descriptor pool that will hold 10 sets with 1 image each
     std::vector<DescriptorAllocator::PoolSizeRatio> sizes = {
 		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
@@ -18,6 +19,7 @@ void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
 	};
 	
     m_desc_allocator.init_pool(m_ctx->get_device(), 10, sizes);
+    */
 }
 
 FGBufferHandle FrameGraph::create_buffer(const std::string& name,
@@ -53,7 +55,7 @@ void FrameGraph::compile() {
    
     build_dependencies();
 
-    collect_descriptors();
+    //collect_descriptors();
     
     // what else
 
@@ -106,43 +108,45 @@ void FrameGraph::build_dependencies() {
         // add an edge if a read depends on a last write
         // TODO: THIS ASSUMES PASSES COME IN ORDER
         // DONT, CONSIDER OTHER ISSUES
-        for(const BufferBinding& b : pass->get_buffers()) {
+        
+        pass->enumerate_buffers([this, pass](const BufferBinding& b) {
             FGBuffer* buffer = m_buffers.get(b.handle);
             Pass* last = buffer->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
             }
-        }
+        });
         
         // in the future this will have to be done per subresource
-        for(const TextureBinding& t : pass->get_textures()) {
+        pass->enumerate_textures([this, pass](const TextureBinding& t) {
             FGTexture* texture = m_textures.get(t.handle);
             Pass* last = texture->get_last_writer();
 
             if(last != nullptr) {
                 add_pass_dependency(last, pass);
             }
-        }
+        });
     }
 
     // TODO: CULL
 }
 
+/*
 void FrameGraph::collect_pass_bindings(DescriptorLayoutBuilder& builder,
         Pass* pass) {
-
     int binding_num = 0;
-    for(const BufferBinding& b : pass->get_buffers()) {
+    pass->enumerate_buffers([&builder, &binding_num](const BufferBinding& b) {
         // TODO: edit to add deduction
         builder.add_binding(binding_num++, 
-                deduce_descriptor_type(b.usage));
-    }
-    for(const TextureBinding& t : pass->get_textures()) {
+                util::deduce_descriptor_type(b.usage));
+    });
+
+    pass->enumerate_textures([&builder, &binding_num](const TextureBinding& t) {
         // TODO: edit to add deduction
         builder.add_binding(binding_num++,
-                deduce_descriptor_type(t.usage));
-    }
+                util::deduce_descriptor_type(t.usage));
+    });
 }
 
 
@@ -177,7 +181,7 @@ void FrameGraph::collect_descriptors() {
         }
     }
 }
-
+*/
 
 void FrameGraph::allocate_resources(FrameContext& fctx) {
     // first collect
@@ -186,21 +190,25 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
         
-        for(const BufferBinding& b : pass->get_buffers()) {
+        // for(const BufferBinding& b : pass->get_buffers()) {
+        pass->enumerate_buffers([this, &transient_buffers]
+        (const BufferBinding& b) {
             FGBuffer* buffer = m_buffers.get(b.handle);
             if(buffer->is_transient() && !buffer->collected()) {
                 transient_buffers.push_back(buffer);
                 buffer->collect();
             }
-        }
+        });
 
-        for(const TextureBinding& t: pass->get_textures()) {
+        //for(const TextureBinding& t: pass->get_textures()) {
+        pass->enumerate_textures([this, &transient_textures]
+        (const TextureBinding& t) {
             FGTexture* texture = m_textures.get(t.handle); 
             if(texture->is_transient() && !texture->collected()) {
                 transient_textures.push_back(texture);
                 texture->collect();
             }
-        }
+        });
     }
 
     // then allocate
@@ -251,7 +259,7 @@ void FrameGraph::collect_pass_barriers() {
             continue;
         }
         
-        for(const BufferBinding& b : pass->get_buffers()) {
+        pass->enumerate_buffers([this, pass](const BufferBinding& b) {
             FGBuffer* buffer = m_buffers.get(b.handle);
 
             BufferTransitionInfo bti = {
@@ -267,9 +275,9 @@ void FrameGraph::collect_pass_barriers() {
             // don't forget to change state
             buffer->set_usage(b.usage);
             buffer->set_access(b.access);
-        }
+        });
 
-        for(const TextureBinding& t : pass->get_textures()) {
+        pass->enumerate_textures([this, pass](const TextureBinding& t) {
             FGTexture* texture = m_textures.get(t.handle); 
             TextureTransitionInfo tti = {
                 texture->get_handle(),
@@ -284,7 +292,7 @@ void FrameGraph::collect_pass_barriers() {
             // don't forget to change state
             texture->set_usage(t.usage);
             texture->set_access(t.access);
-        }
+        });
     }
 }
 
@@ -298,14 +306,14 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             FGBuffer* buffer = m_buffers.get(bti.handle);
             BufferResource* br = buffer->get_resource();
   
-            VkPipelineStageFlags2 src_stage = deduce_pipeline_flags(
-                    bti.src_usage, pass->get_type());
-            VkAccessFlags2 src_access = deduce_access_flags(
+            VkPipelineStageFlags2 src_stage = util::deduce_pipeline_flags(
+                    bti.src_usage);
+            VkAccessFlags2 src_access = util::deduce_access_flags(
                     bti.src_usage);
 
-            VkPipelineStageFlags2 dst_stage = deduce_pipeline_flags(
-                    bti.dst_usage, pass->get_type());
-            VkAccessFlags2 dst_access = deduce_access_flags(
+            VkPipelineStageFlags2 dst_stage = util::deduce_pipeline_flags(
+                    bti.dst_usage);
+            VkAccessFlags2 dst_access = util::deduce_access_flags(
                     bti.dst_usage);
 
             VkBufferMemoryBarrier2 buf_b = {
@@ -329,17 +337,17 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             TextureResource* tr = texture->get_resource();
 
 
-            VkPipelineStageFlags2 src_stage = deduce_pipeline_flags(
-                    tti.src_usage, pass->get_type());
-            VkAccessFlags2 src_access = deduce_access_flags(
+            VkPipelineStageFlags2 src_stage = util::deduce_pipeline_flags(
                     tti.src_usage);
-            VkImageLayout src_layout = deduce_layout(tti.src_usage);
+            VkAccessFlags2 src_access = util::deduce_access_flags(
+                    tti.src_usage);
+            VkImageLayout src_layout = util::deduce_layout(tti.src_usage);
 
-            VkPipelineStageFlags2 dst_stage = deduce_pipeline_flags(
-                    tti.dst_usage, pass->get_type());
-            VkAccessFlags2 dst_access = deduce_access_flags(
+            VkPipelineStageFlags2 dst_stage = util::deduce_pipeline_flags(
                     tti.dst_usage);
-            VkImageLayout dst_layout = deduce_layout(tti.dst_usage);
+            VkAccessFlags2 dst_access = util::deduce_access_flags(
+                    tti.dst_usage);
+            VkImageLayout dst_layout = util::deduce_layout(tti.dst_usage);
 
             VkImageAspectFlags aspect_mask;
             if (dst_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) {
@@ -347,7 +355,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             } else {
                 aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
             }
-           // std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
+            //std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
 
             VkImageMemoryBarrier2 img_b = {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -427,18 +435,22 @@ void FrameGraph::execute(FrameContext& fctx) {
         if(!buffer_barriers.empty() || !image_barriers.empty()) {
             VkDependencyInfo dep_info = {
                 .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                    .pNext = nullptr,
-                    .bufferMemoryBarrierCount = static_cast<uint32_t>(buffer_barriers.size()),
-                    .pBufferMemoryBarriers = buffer_barriers.data(),
-                    .imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size()),
-                    .pImageMemoryBarriers = image_barriers.data()
+                .pNext = nullptr,
+                .bufferMemoryBarrierCount = static_cast<uint32_t>(buffer_barriers.size()),
+                .pBufferMemoryBarriers = buffer_barriers.data(),
+                .imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size()),
+                .pImageMemoryBarriers = image_barriers.data()
             };
 
             vkCmdPipelineBarrier2(fctx.get_cmd_buffer(), &dep_info);
         }
-        
-        pass->execute(fctx.pass_view());
 
+        
+        PassContext ctx(m_ctx->get_device(), 
+                m_buffers, m_textures, &fctx, 
+                pass.get());
+
+        pass->execute(ctx);
     }
     reset();
 }
@@ -451,133 +463,3 @@ void FrameGraph::reset() {
     m_passes.clear();
 }
 
-// DEDUCE FLAGS
-VkAccessFlags2 FrameGraph::deduce_access_flags(BufferUsage usage) {
-    switch(usage) {
-        // TODO: FIGURE OUT READ WRITE
-        case BufferUsage::StorageBuffer:
-            return VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | 
-                VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-        case BufferUsage::UniformBuffer:
-            return VK_ACCESS_2_UNIFORM_READ_BIT;
-        case BufferUsage::VertexBuffer:
-            return VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
-        case BufferUsage::IndexBuffer:
-            return VK_ACCESS_2_INDEX_READ_BIT;
-        case BufferUsage::TransferSrc:
-            return VK_ACCESS_2_TRANSFER_READ_BIT;
-        case BufferUsage::TransferDst:
-            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        default:
-            return VK_ACCESS_2_NONE;
-    }
-}
-
-VkAccessFlags2 FrameGraph::deduce_access_flags(TextureUsage usage) {
-    switch(usage) {
-        // FIGURE OUT READ WRITE
-        case TextureUsage::ColorAttachment:
-            return VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
-                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
-        case TextureUsage::DepthAttachment:
-            return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        case TextureUsage::InputAttachment:
-            return VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
-        case TextureUsage::StorageImage:
-            return VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
-                VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-        case TextureUsage::TransferSrc:
-            return VK_ACCESS_2_TRANSFER_READ_BIT;
-        case TextureUsage::TransferDst:
-            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        default:
-            return VK_ACCESS_2_NONE;
-    }
-}
-
-// TODO: FIGURE OUT HOW DEPTH/STENCIL ATTACHMENT WORKS
-VkImageLayout FrameGraph::deduce_layout(TextureUsage usage) {
-    switch(usage) {
-        case TextureUsage::ColorAttachment:
-            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
-        case TextureUsage::DepthAttachment:
-            // TODO: CONSIDER OPTIONS FOR OTHER LAYOUTS
-            // IE. DEPTH, STENCIL, + READ ONLY OPTIONS
-            return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        case TextureUsage::InputAttachment:
-            // TODO: CONSIDER OTHER READ ONLY LAYOUTS
-            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        case TextureUsage::StorageImage:
-            // TODO: IS THIS OPTIMIZABLE?
-            return VK_IMAGE_LAYOUT_GENERAL;
-        case TextureUsage::TransferSrc:
-            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        case TextureUsage::TransferDst:
-            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        default:
-            return VK_IMAGE_LAYOUT_UNDEFINED;
-    }
-}
-
-VkPipelineStageFlags2 FrameGraph::deduce_pipeline_flags(BufferUsage usage, PassType type) {
-    switch(usage) {
-        case BufferUsage::StorageBuffer:
-            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-        case BufferUsage::UniformBuffer:
-            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-        case BufferUsage::VertexBuffer:
-            return VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-        case BufferUsage::IndexBuffer:
-            return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
-        case BufferUsage::TransferSrc:
-        case BufferUsage::TransferDst:
-            return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
-        default:
-            return VK_PIPELINE_STAGE_2_NONE;
-    }
-}
-
-VkPipelineStageFlags2 FrameGraph::deduce_pipeline_flags(TextureUsage usage, PassType type) {
-    switch(usage) {
-        case TextureUsage::ColorAttachment:
-            return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        case TextureUsage::DepthAttachment:
-            return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | 
-                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-        case TextureUsage::InputAttachment:
-            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-        case TextureUsage::StorageImage:
-            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-        case TextureUsage::TransferSrc:
-        case TextureUsage::TransferDst:
-            return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
-        default:
-            return VK_PIPELINE_STAGE_2_NONE;
-    }
-}
-
-VkDescriptorType FrameGraph::deduce_descriptor_type(BufferUsage usage) {
-    switch(usage) {
-        case BufferUsage::StorageBuffer:
-            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        case BufferUsage::UniformBuffer:
-            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        default:
-            // TODO: SHOULD ERROR
-            return VK_DESCRIPTOR_TYPE_SAMPLER;
-    }
-}
-
-VkDescriptorType FrameGraph::deduce_descriptor_type(TextureUsage usage) {
-   switch(usage) {
-        case TextureUsage::InputAttachment:
-            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-        case TextureUsage::StorageImage:
-            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        default:
-            // TODO: SHOULD ERROR
-            return VK_DESCRIPTOR_TYPE_SAMPLER; 
-    }
-
-}

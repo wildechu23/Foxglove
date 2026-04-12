@@ -5,85 +5,67 @@
 
 #include "spirv_reflect.h"
 
-#include <map>
+#include <unordered_map>
+#include <vulkan/vulkan.h>
+
+
+// TODO: FIX CAMELCASE
+class GraphicsConfigBuilder {
+public:
+    GraphicsConfigBuilder(){ clear(); }
+
+    void clear();
+    
+    GraphicsPipelineConfig build();
+    void set_shaders(GraphicsShaderSet shaders);
+    void set_input_topology(VkPrimitiveTopology topology);
+    void set_polygon_mode(VkPolygonMode mode);
+    void set_cull_mode(VkCullModeFlags cullMode, VkFrontFace frontFace);
+    void set_multisampling_none();
+
+    void disable_blending();
+    void set_color_attachment_format(VkFormat format);
+    void set_depth_format(VkFormat format);
+    void disable_depthtest();
+private:
+    GraphicsShaderSet                       m_shader_set;
+
+    VkPipelineInputAssemblyStateCreateInfo  m_inputAssembly;
+    VkPipelineRasterizationStateCreateInfo  m_rasterizer;
+    VkPipelineColorBlendAttachmentState     m_colorBlendAttachment;
+    VkPipelineMultisampleStateCreateInfo    m_multisampling;
+    VkPipelineDepthStencilStateCreateInfo   m_depthStencil;
+    VkPipelineRenderingCreateInfo           m_renderInfo;
+    VkFormat                                m_colorAttachmentformat;
+};
+
 
 class PipelineManager {
 public:
-    ComputePipeline* create_compute_pipeline(ComputeShader* shader) {
-        ComputePipeline* pipeline = new ComputePipeline(m_device, shader);
-
-        // create descriptorsetlayouts
-        std::vector<DescriptorSetLayout> layouts = ShaderLibrary::reflect_layout(shader);
-        // TODO: CONSIDER STDARRAY SIZE 4 INSTEAD
-        pipeline->m_descriptor_layouts.reserve(layouts.size());
-        for(size_t i = 0; i < layouts.size(); ++i) {
-            DescriptorSetLayout& layout = layouts[i];
-
-            VkDescriptorSetLayoutCreateInfo create_info = {
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .bindingCount = layout.bindings.size(),
-                .pBindings = layouts.bindings.data()
-            };
-            
-            // TODO: MAKE IT MATCH SETNUMBER?
-			vkCreateDescriptorSetLayout(m_device, create_info, nullptr, 
-                    pipeline->m_descriptor_layouts[i]);
-        }
-
-        VkPipelineLayoutCreateInfo layout_info = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .pNext = nullptr,
-            .setLayoutCount = layouts.size(),
-            .pSetLayouts = pipeline->m_descriptor_layouts.data()
-        };
-
-        vkCreatePipelineLayout(m_device, &layout_info, nullptr, 
-                &pipeline->m_pipeline_layout);
-
-        VkPipelineShaderStageCreateInfo stage_info = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-            .module = shader->m_module,
-            .pName = "main"
-        };
-
-        VkComputePipelineCreateInfo compute_pipeline_info = {
-            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .stage = stage_info,
-            .layout = pipeline->m_layout
-        };
-        
-        // TODO: consider bundling them i dunno
-        vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, 
-                &compute_pipeline_info, nullptr, pipeline->m_pipeline);
-
-        m_compute_pipeline_cache[shader] = pipeline;
-        return pipeline;
-    }
+    void init(VkDevice device);
+    void cleanup();
     
-
-    // TODO: THIS NEEDS TO BE EXTENDED TO MULTIPLE SHADERS
-    GraphicsPipeline* create_graphics_pipeline(GraphicsShader* shader) {
-
-    }
-
-    // TODO: MAKE GETTERS THAT CHECK CACHE FIRST
-    ComputePipeline* get_pipeline(ComputeShader* shader) {
-        // cache check
-        if(m_compute_pipeline_cache.contains(shader)) {
-            return m_compute_pipeline_cache[shader];
-        }
-        return create_compute_pipeline(shader);
-    }
-
+    ComputePipeline* get_compute_pipeline(ComputeShader* shader); 
+    GraphicsPipeline* get_graphics_pipeline(GraphicsPipelineConfig& config);
 
 private:
     VkDevice m_device;
 
+    void create_descriptor_set_layouts(Pipeline* pipeline, 
+            std::vector<DescriptorSetLayout>& layouts);
+
+    // graphics stuff
+    void create_graphics_desc(GraphicsPipelineConfig& config,
+            GraphicsPipelineDesc* desc);
+    void build_graphics_pipeline(GraphicsPipeline* pipeline, 
+            GraphicsShaderSet& set);
+
+
     // pipeline caches, will need to be thread safe eventually
-    std::unordered_map<ComputeShader*, ComputePipeline*> m_compute_pipeline_cache;
+    // unreal stores a local cache per thread and global cache 
+    
+    std::unordered_map<uint64_t, ComputePipeline*> m_compute_pipeline_cache;
+    std::unordered_map<uint64_t, GraphicsPipeline*> m_graphics_pipeline_cache;
+
+    VkPipelineCache m_vk_pipeline_cache;
 };

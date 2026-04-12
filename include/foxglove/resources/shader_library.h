@@ -9,6 +9,9 @@
 #include <fstream>
 #include <span>
 
+#include <iostream>
+#include <vulkan/vulkan.h>
+
 class ShaderLibrary {
 public:
     ShaderLibrary() = default;
@@ -18,15 +21,73 @@ public:
         m_device = device;
     }
 
+    void cleanup() {
+        for (const auto& [key, shader] : m_shader_map) {
+            shader->cleanup(m_device);
+        }
+    };
+
     ComputeShader* create_compute_shader(const std::filesystem::path& path) {
         return create_shader<ComputeShader>(path);
     }
-    
+
+    static std::vector<DescriptorSetLayout> reflect_layout(Shader* shader) {
+        std::span<uint32_t> code = shader->m_code;
+
+        SpvReflectShaderModule spvmodule;
+        SpvReflectResult result = spvReflectCreateShaderModule(
+                code.size() * sizeof(uint32_t), code.data(), 
+                &spvmodule);
+
+        if (result != SPV_REFLECT_RESULT_SUCCESS) {
+            std::cerr << "Error: Shader reflect failed" << std::endl;
+            return {};
+        }
+            
+        // count pass
+        uint32_t count = 0;
+        spvReflectEnumerateDescriptorSets(&spvmodule, &count, nullptr);
+        std::cout << "count: " << count << std::endl;
+
+        // data pass
+        std::vector<SpvReflectDescriptorSet*> sets(count);
+        result = spvReflectEnumerateDescriptorSets(&spvmodule, &count, sets.data());
+
+        std::vector<DescriptorSetLayout> set_layouts;
+
+        for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
+            const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
+
+            DescriptorSetLayout layout{};
+
+            layout.bindings.resize(refl_set.binding_count);
+            for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
+                const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
+
+                VkDescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
+                layout_binding.binding = refl_binding.binding;
+                layout_binding.descriptorType = static_cast<VkDescriptorType>(
+                        refl_binding.descriptor_type);
+                layout_binding.descriptorCount = 1;
+                for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
+                    layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+                }
+                layout_binding.stageFlags = static_cast<VkShaderStageFlagBits>(
+                        spvmodule.shader_stage);
+            }
+            layout.set_number = refl_set.set;
+            set_layouts.push_back(layout);
+        }
+
+        return set_layouts;
+    }
+
 private:
     template <typename ShaderT>
     ShaderT* create_shader(const std::filesystem::path& path) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
+            std::cerr << "File not found" << std::endl;
             return nullptr;
         }
 
@@ -50,58 +111,11 @@ private:
         }
 
         const std::string name = path.filename().string(); 
-        ShaderT* out_shader = new ShaderT(name, shader_module, buffer);
+        ShaderT* out_shader = new ShaderT(name, shader_module, std::move(buffer));
         m_shader_map[counter++] = out_shader;
 
         return out_shader;
     }
-
-    static std::vector<DescriptorSetLayout> reflect_layout(Shader* shader) {
-        std::span<uint32_t> code = shader->m_code;
-
-        SpvReflectShaderModule spvmodule;
-        SpvReflectResult result = spvReflectCreateShaderModule(
-                code.size() * sizeof(uint32_t), code.data(), 
-                &spvmodule);
-
-        // count pass
-        uint32_t count = 0;
-		spvReflectEnumerateDescriptorSets(&spvmodule, &count, nullptr);
-
-        // data pass
-        std::vector<SpvReflectDescriptorSet*> sets(count);
-        result = spvReflectEnumerateDescriptorSets(&spvmodule, &count, sets.data());
-	
-        std::vector<DescriptorSetLayout> set_layouts;
-
-		for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
-			const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
-
-            DescriptorSetLayout layout{};
-            
-            layout.bindings.resize(refl_set.binding_count);
-            for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
-                const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
-				
-                VkDescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
-				layout_binding.binding = refl_binding.binding;
-                layout_binding.descriptorType = static_cast<VkDescriptorType>(
-                        refl_binding.descriptor_type);
-                layout_binding.descriptorCount = 1;
-				for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
-					layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
-                }
-                layout_binding.stageFlags = static_cast<VkShaderStageFlagBits>(
-                        spvmodule.shader_stage);
-            }
-			layout.set_number = refl_set.set;
-            set_layouts.push_back(layout);
-        }
-
-        return set_layouts;
-    }
-
-
 
     VkDevice m_device;
     // TODO: remove counter

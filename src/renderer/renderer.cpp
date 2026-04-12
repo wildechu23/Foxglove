@@ -22,6 +22,7 @@ void Renderer::init() {
 
     m_fg.init(&m_ctx, &m_swapchain);
     m_sl.init(m_ctx.get_device());
+    m_pm.init(m_ctx.get_device());
     
     // initialize draw images
     /*VkExtent3D draw_image_extent = {
@@ -155,6 +156,10 @@ void Renderer::cleanup() {
     }
     
     m_fg.reset();
+
+    m_pm.cleanup();
+    m_sl.cleanup();
+    
     m_swapchain.cleanup();
     m_ctx.cleanup();
 }

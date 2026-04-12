@@ -14,12 +14,11 @@ sources = [
   memory_sources,
 ]
 
-foxglove = shared_library(
+foxglove = library(
   'foxglove',
   sources,
-  include_directories: [inc, third_party_inc],
-  link_with: vkbootstrap_lib,
-  dependencies: [vulkan_dep, glfw_dep, glm_dep],
+  include_directories: inc,
+  dependencies: [vulkan_dep, glfw_dep, glm_dep, third_party_deps],
   install: true
 )
 

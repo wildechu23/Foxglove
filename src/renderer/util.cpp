@@ -115,3 +115,141 @@ void util::copy_image_to_image(VkCommandBuffer cmd, VkImage source, VkImage dest
 
 	vkCmdBlitImage2(cmd, &blitInfo);
 }
+
+// DEDUCE FLAGS
+VkAccessFlags2 util::deduce_access_flags(BufferUsage usage) {
+    switch(usage) {
+        // TODO: FIGURE OUT READ WRITE
+        case BufferUsage::StorageBuffer:
+            return VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | 
+                VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+        case BufferUsage::UniformBuffer:
+            return VK_ACCESS_2_UNIFORM_READ_BIT;
+        case BufferUsage::VertexBuffer:
+            return VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+        case BufferUsage::IndexBuffer:
+            return VK_ACCESS_2_INDEX_READ_BIT;
+        case BufferUsage::TransferSrc:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case BufferUsage::TransferDst:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        default:
+            return VK_ACCESS_2_NONE;
+    }
+}
+
+VkAccessFlags2 util::deduce_access_flags(TextureUsage usage) {
+    switch(usage) {
+        // FIGURE OUT READ WRITE
+        case TextureUsage::ColorAttachment:
+            return VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+        case TextureUsage::DepthAttachment:
+        case TextureUsage::StencilAttachment:
+        case TextureUsage::DepthStencilAttachment:
+            return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        case TextureUsage::InputAttachment:
+            return VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+        case TextureUsage::StorageImage:
+            return VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
+                VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+        case TextureUsage::TransferSrc:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case TextureUsage::TransferDst:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        default:
+            return VK_ACCESS_2_NONE;
+    }
+}
+
+VkImageLayout util::deduce_layout(TextureUsage usage) {
+    switch(usage) {
+        case TextureUsage::ColorAttachment:
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+        case TextureUsage::DepthAttachment:
+            // TODO: CONSIDER OPTIONS FOR OTHER LAYOUTS
+            // IE. READ ONLY OPTIONS
+            return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        case TextureUsage::StencilAttachment:
+            return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+        case TextureUsage::DepthStencilAttachment:
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case TextureUsage::InputAttachment:
+            // TODO: CONSIDER OTHER READ ONLY LAYOUTS
+            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case TextureUsage::StorageImage:
+            // TODO: IS THIS OPTIMIZABLE?
+            return VK_IMAGE_LAYOUT_GENERAL;
+        case TextureUsage::TransferSrc:
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        case TextureUsage::TransferDst:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        default:
+            return VK_IMAGE_LAYOUT_UNDEFINED;
+    }
+}
+
+VkPipelineStageFlags2 util::deduce_pipeline_flags(BufferUsage usage) {
+    switch(usage) {
+        case BufferUsage::StorageBuffer:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case BufferUsage::UniformBuffer:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case BufferUsage::VertexBuffer:
+            return VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+        case BufferUsage::IndexBuffer:
+            return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
+        case BufferUsage::TransferSrc:
+        case BufferUsage::TransferDst:
+            return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        default:
+            return VK_PIPELINE_STAGE_2_NONE;
+    }
+}
+
+VkPipelineStageFlags2 util::deduce_pipeline_flags(TextureUsage usage) {
+    switch(usage) {
+        case TextureUsage::ColorAttachment:
+            return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case TextureUsage::DepthAttachment:
+        case TextureUsage::StencilAttachment:
+        case TextureUsage::DepthStencilAttachment:
+            return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | 
+                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+        case TextureUsage::InputAttachment:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        case TextureUsage::StorageImage:
+            return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        case TextureUsage::TransferSrc:
+        case TextureUsage::TransferDst:
+            return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        default:
+            return VK_PIPELINE_STAGE_2_NONE;
+    }
+}
+
+VkDescriptorType util::deduce_descriptor_type(BufferUsage usage) {
+    switch(usage) {
+        case BufferUsage::StorageBuffer:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case BufferUsage::UniformBuffer:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        default:
+            // TODO: SHOULD ERROR
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+    }
+}
+
+VkDescriptorType util::deduce_descriptor_type(TextureUsage usage) {
+   switch(usage) {
+        case TextureUsage::InputAttachment:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        case TextureUsage::StorageImage:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        default:
+            // TODO: SHOULD ERROR
+            return VK_DESCRIPTOR_TYPE_SAMPLER; 
+    }
+
+}
