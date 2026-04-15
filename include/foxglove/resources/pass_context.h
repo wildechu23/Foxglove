@@ -2,10 +2,10 @@
 
 #include "foxglove/resources/frame_context.h"
 #include "foxglove/resources/attachments.h"
+#include "foxglove/resources/graphics_context.h"
 
 #include "foxglove/renderer/pass.h"
 #include "foxglove/renderer/util.h"
-
 
 class PassContext {
 public:
@@ -29,10 +29,12 @@ public:
     void bind_compute_pipeline(ComputePipeline* pipeline);
     void dispatch_compute(uint32_t x, uint32_t y, uint32_t z);
 
-    void bind_graphics_pipeline(GraphicsPipeline* pipeline,
-        DrawConfig config);
+    GraphicsContext bind_graphics_pipeline(GraphicsPipeline* pipeline);
 private:
-    void fill_attachments(VkRenderingInfo& info, GraphicsPass* pass);
+    void update_descriptor_sets(Pipeline* pipeline, 
+            VkPipelineBindPoint bind_point);
+
+    VkRenderingInfo build_rendering_info(GraphicsPass* pass);
 
     VkDevice m_device;
     FGBufferRegistry& m_buffers;

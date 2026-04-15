@@ -256,7 +256,7 @@ void PipelineManager::build_graphics_pipeline(
 		.viewportCount = 1,
     	.scissorCount = 1
 	};
-
+    
     VkPipelineRenderingCreateInfo render_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .pNext = nullptr,

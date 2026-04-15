@@ -15,10 +15,29 @@ int main() {
     ShaderLibrary& sl = renderer.get_sl();
     PipelineManager& pm = renderer.get_pm();
 
-    fs::path path("shaders/gradient.comp.spv");
+    ComputeShader* shader = sl.create_compute_shader(
+            fs::path("shaders/gradient.comp.spv"));
 
-    ComputeShader* shader = sl.create_compute_shader(path);
-    ComputePipeline* pipeline = pm.get_compute_pipeline(shader);
+    VertexShader* vert = sl.create_vertex_shader(
+            fs::path("shaders/colored_triangle.vert.spv"));
+    FragmentShader* frag = sl.create_fragment_shader(
+            fs::path("shaders/colored_triangle.frag.spv"));
+
+    ComputePipeline* background = pm.get_compute_pipeline(shader);
+    
+    GraphicsConfigBuilder gcb;
+    gcb.set_shaders({vert, frag, nullptr});
+    gcb.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    gcb.set_polygon_mode(VK_POLYGON_MODE_FILL);
+    gcb.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+    gcb.set_multisampling_none();
+    gcb.disable_blending();
+    gcb.disable_depthtest();
+    gcb.set_color_attachment_format(VK_FORMAT_R16G16B16A16_SFLOAT);
+    gcb.set_depth_format(VK_FORMAT_UNDEFINED);
+
+    GraphicsPipelineConfig config = gcb.build();
+    GraphicsPipeline* triangle = pm.get_graphics_pipeline(config);
 
 
     VkImageUsageFlags draw_image_usages = VkImageUsageFlags(
@@ -38,7 +57,7 @@ int main() {
             });
         
 
-        fg.create_pass("test", PassType::Graphics)
+        fg.create_pass("test", PassType::Clear)
             .clear_color(draw_image, Color{0.f, 1.f, 0.f, 1.f})
             .build();
         
@@ -47,8 +66,19 @@ int main() {
                     ResourceAccess::ReadWrite, 0, 0)
             .execute([&](PassContext ctx) {
                 //std::cout << "hi" << std::endl;
-                ctx.bind_compute_pipeline(pipeline);
+                ctx.bind_compute_pipeline(background);
                 ctx.dispatch_compute(16, 16, 1);
+            })
+            .build();
+
+        fg.create_pass("triangle", PassType::Graphics)
+            .bind_color_attachment(draw_image, 
+                    LoadOp::Load, StoreOp::Store)
+            .execute([&](PassContext ctx) {
+                ctx.bind_graphics_pipeline(triangle)
+                    .bind_viewport({0, 0, 1280, 720, 0.f, 1.f})
+                    .bind_scissor({0, 0, 1280, 720})
+                    .draw(3, 1, 0, 0);
             })
             .build();
 

@@ -60,6 +60,7 @@ enum class PassType {
     Graphics,
     Compute,
     Transfer,
+    Clear,
     Present
 };
 
@@ -205,10 +206,10 @@ public:
 
 class GraphicsPass : public Pass {
 public:
-    GraphicsPass(PassDesc desc, GraphicsAttachments attachments) : 
-        Pass(desc), m_attachments(attachments) {}
+    GraphicsPass(PassDesc desc, GraphicsPassInfo info) : 
+        Pass(desc), m_info(info) {}
 
-    const GraphicsAttachments& get_attachments () const { return m_attachments; }
+    const GraphicsPassInfo& get_info () const { return m_info; }
 
     void enumerate_textures(std::function<void(const TextureBinding&)> fn) const {
         // Descriptors
@@ -217,30 +218,42 @@ public:
         }
             
         // Attachments
-        for(const RenderAttachment& ra : m_attachments.color_attachments) {
+        for(const ColorAttachment& ra : m_info.color_attachments) {
             fn({ ra.handle, TextureUsage::ColorAttachment, ResourceAccess::Write });
         }
-        
-        // TODO: CHECK IF THIS IS WHATS NEEDED
-        // ALSO SHOULD STRUCTS BE RECONSTRUCTED ALL THE TIME
-        FGTextureHandle depth_handle = m_attachments.depth_attachment.handle;
-        FGTextureHandle stencil_handle = m_attachments.stencil_attachment.handle;
 
-        if(m_attachments.is_combined()) {
-            fn({ depth_handle, TextureUsage::DepthStencilAttachment,
+        if(m_info.is_combined()) {
+            FGTextureHandle handle = m_info.depth_attachment.value().handle;
+            fn({ handle, TextureUsage::DepthStencilAttachment,
                     ResourceAccess::ReadWrite });
         } else {
-            fn({ depth_handle, TextureUsage::DepthAttachment, 
-                    ResourceAccess::ReadWrite });
-            fn({ stencil_handle, TextureUsage::StencilAttachment, 
-                    ResourceAccess::ReadWrite });
+            if(m_info.has_depth()) {
+                FGTextureHandle handle = m_info.depth_attachment
+                    .value().handle;
+                
+                fn({ handle, TextureUsage::DepthAttachment, 
+                        ResourceAccess::ReadWrite });
+            }
+            if(m_info.has_stencil()) {
+                FGTextureHandle handle = m_info.stencil_attachment
+                    .value().handle;
+                
+                fn({ handle, TextureUsage::StencilAttachment, 
+                        ResourceAccess::ReadWrite });
+            }
         }
     }
 private:
-    GraphicsAttachments m_attachments;
+    GraphicsPassInfo m_info;
+
+    friend class FrameGraph;
+
+    bool b_attachments = false;
+
+    std::vector<VkRenderingAttachmentInfo> m_color_attachment_info;
+    VkRenderingAttachmentInfo m_depth_attachment_info;
+    VkRenderingAttachmentInfo m_stencil_attachment_info;
+
+    VkRenderingInfo m_rendering_info;
 };
 
-
-// TODO: IN BUILDER
-// to add rendering support, make passes store extra info
-// store colorattachments? depth attachment? stencil attachment?

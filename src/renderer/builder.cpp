@@ -7,6 +7,14 @@
 // PassBuilder
 //
 
+PassBuilder::PassBuilder(FrameGraph* fg, const std::string& name, PassType type) : m_fg(fg), m_name(name), m_type(type) {
+    m_render_area = VkRect2D {
+        { 0, 0 },
+        fg->m_swapchain->get_extent()
+    };
+    m_layer_count = 1;
+}
+
 void PassBuilder::check_init(uint32_t set) {
     if(m_bind_groups.find(set) == m_bind_groups.end()) {
         m_bind_groups[set] = { 
@@ -53,7 +61,7 @@ PassBuilder& PassBuilder::bind_color_attachment(
 PassBuilder& PassBuilder::bind_depth_attachment(
         FGTextureHandle handle, 
         LoadOp load_op, StoreOp store_op,
-        std::optional<Color> clear_value) {
+        std::optional<float> clear_value) {
     m_depth_attachment = {
         handle, load_op, store_op, clear_value
     };
@@ -63,7 +71,7 @@ PassBuilder& PassBuilder::bind_depth_attachment(
 PassBuilder& PassBuilder::bind_stencil_attachment(
         FGTextureHandle handle, 
         LoadOp load_op, StoreOp store_op,
-        std::optional<Color> clear_value) {
+        std::optional<uint32_t> clear_value) {
     m_stencil_attachment = {
         handle, load_op, store_op, clear_value
     };
@@ -73,9 +81,10 @@ PassBuilder& PassBuilder::bind_stencil_attachment(
 PassBuilder& PassBuilder::bind_depth_stencil_attachment(
         FGTextureHandle handle, 
         LoadOp load_op, StoreOp store_op,
-        std::optional<Color> clear_value) {
-    bind_depth_attachment(handle, load_op, store_op, clear_value);
-    bind_stencil_attachment(handle, load_op, store_op, clear_value);
+        std::optional<float> depth_clear_value,
+        std::optional<uint32_t> stencil_clear_value) {
+    bind_depth_attachment(handle, load_op, store_op, depth_clear_value);
+    bind_stencil_attachment(handle, load_op, store_op, stencil_clear_value);
     return *this;
 }
 
@@ -123,6 +132,8 @@ PassBuilder& PassBuilder::present(FGTextureHandle handle) {
 }
 
 PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
+    assert(m_type == PassType::Clear);
+
     bind_texture(
             handle, 
             TextureUsage::StorageImage, 
@@ -180,14 +191,15 @@ Pass* PassBuilder::build() {
             break;
         }
         case(PassType::Graphics): {
-            GraphicsAttachments attachments = {
+            GraphicsPassInfo info = {
                 m_color_attachments,
                 m_depth_attachment,
-                m_stencil_attachment
+                m_stencil_attachment,
+                m_render_area,
+                m_layer_count
             };
             
-            pass = std::make_unique<GraphicsPass>(desc,
-                    attachments);
+            pass = std::make_unique<GraphicsPass>(desc, info);
             break;
         }
         default: {

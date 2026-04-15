@@ -53,6 +53,8 @@ private:
     void collect_pass_barriers();
     void compile_pass_barriers(FrameContext& fctx);
 
+    VkRenderingInfo get_rendering_info(GraphicsPass* pass);
+
     std::vector<std::unique_ptr<Pass>> m_passes;
 
     FGBufferRegistry m_buffers;

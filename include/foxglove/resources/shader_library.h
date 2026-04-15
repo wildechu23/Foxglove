@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vulkan/vulkan.h>
 
+namespace fs = std::filesystem;
+
 class ShaderLibrary {
 public:
     ShaderLibrary() = default;
@@ -27,8 +29,24 @@ public:
         }
     };
 
-    ComputeShader* create_compute_shader(const std::filesystem::path& path) {
+    ComputeShader* create_compute_shader(const fs::path& path) {
         return create_shader<ComputeShader>(path);
+    }
+
+    VertexShader* create_vertex_shader(const fs::path& path) {
+        return create_shader<VertexShader>(path);
+    }
+
+    MeshShader* create_mesh_shader(const fs::path& path) {
+        return create_shader<MeshShader>(path);
+    }
+
+    FragmentShader* create_fragment_shader(const fs::path& path) {
+        return create_shader<FragmentShader>(path);
+    }
+
+    GeometryShader* create_geometry_shader(const fs::path& path) {
+        return create_shader<GeometryShader>(path);
     }
 
     static std::vector<DescriptorSetLayout> reflect_layout(Shader* shader) {
@@ -84,7 +102,7 @@ public:
 
 private:
     template <typename ShaderT>
-    ShaderT* create_shader(const std::filesystem::path& path) {
+    ShaderT* create_shader(const fs::path& path) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             std::cerr << "File not found" << std::endl;

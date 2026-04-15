@@ -407,12 +407,120 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
                     .levelCount = VK_REMAINING_MIP_LEVELS,
                     .baseArrayLayer = 0,
                     .layerCount = VK_REMAINING_ARRAY_LAYERS
-                }
-            };
+                    }
+    };
 
             pass->add_vk_image_barrier(img_b);
         }
     }
+}
+
+
+VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
+    if(pass->b_attachments) {
+        return pass->m_rendering_info;
+    }
+
+    VkRenderingAttachmentInfo* depth_ptr = nullptr;
+    VkRenderingAttachmentInfo* stencil_ptr = nullptr;
+    
+    std::vector<VkRenderingAttachmentInfo>& color_attachment_info = pass
+        ->m_color_attachment_info;
+    VkRenderingAttachmentInfo& depth_attachment_info = pass
+        ->m_depth_attachment_info;
+    VkRenderingAttachmentInfo& stencil_attachment_info = pass
+        ->m_stencil_attachment_info;
+    
+    const GraphicsPassInfo& info = pass->get_info();
+    for(const ColorAttachment& ca : info.color_attachments) {
+        FGTexture* fg_texture = m_textures.get(ca.handle);
+        TextureResource* texture = fg_texture->get_resource();
+        
+        VkClearColorValue clear;
+        if(ca.clear_value.has_value()) {
+            const Color& c = ca.clear_value.value();
+            clear = { c.r, c.g, c.b, c.a };
+        }
+        
+        color_attachment_info.push_back(VkRenderingAttachmentInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .pNext = nullptr,
+            .imageView = texture->view,
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .loadOp = util::to_vulkan(ca.load_op),
+            .storeOp = util::to_vulkan(ca.store_op),
+            .clearValue = { .color = { clear }} 
+        });
+    }
+    
+    if (info.depth_attachment.has_value()) {
+        const DepthAttachment& da = info.depth_attachment.value();
+        TextureResource* depth_texture = m_textures.get(da.handle)
+            ->get_resource();
+        
+        VkImageLayout layout = info.is_combined() 
+            ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+            : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    
+        depth_attachment_info = VkRenderingAttachmentInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .pNext = nullptr,
+            .imageView = depth_texture->view,
+            .imageLayout = layout,
+            .loadOp = util::to_vulkan(da.load_op),
+            .storeOp = util::to_vulkan(da.store_op),
+            .clearValue = { .depthStencil = {
+                .depth = da.clear_value.has_value() 
+                    ? da.clear_value.value() 
+                    : 0.0f,
+                .stencil = 0
+            }}
+        };
+
+        depth_ptr = &depth_attachment_info;
+    }
+    
+    if (info.stencil_attachment.has_value()) {
+        const StencilAttachment& sa = info.stencil_attachment.value();
+        TextureResource* stencil_texture = m_textures.get(sa.handle)
+            ->get_resource();
+        
+        VkImageLayout layout = info.is_combined() 
+            ? VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL
+            : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    
+        stencil_attachment_info = VkRenderingAttachmentInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .pNext = nullptr,
+            .imageView = stencil_texture->view,
+            .imageLayout = layout,
+            .loadOp = util::to_vulkan(sa.load_op),
+            .storeOp = util::to_vulkan(sa.store_op),
+            .clearValue = { .depthStencil = {
+                .depth = 0,
+                .stencil = sa.clear_value.has_value() 
+                    ? sa.clear_value.value()
+                    : 0u
+            }}
+        };
+
+        stencil_ptr = &stencil_attachment_info;
+    }
+    
+    pass->b_attachments = true;
+    pass->m_rendering_info = VkRenderingInfo{
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .pNext = nullptr,
+        .renderArea = info.render_area,
+        .layerCount = info.layer_count,
+        .colorAttachmentCount = static_cast<uint32_t>(
+                color_attachment_info.size()),
+        .pColorAttachments = color_attachment_info.data(),
+        .pDepthAttachment = depth_ptr,
+        .pStencilAttachment = stencil_ptr
+    };
+
+    return pass->m_rendering_info;
 }
 
 void FrameGraph::execute(FrameContext& fctx) {
@@ -450,7 +558,17 @@ void FrameGraph::execute(FrameContext& fctx) {
                 m_buffers, m_textures, &fctx, 
                 pass.get());
 
-        pass->execute(ctx);
+        if(pass->get_type() == PassType::Graphics) {
+            GraphicsPass* g_pass = static_cast<GraphicsPass*>(pass.get());
+            VkRenderingInfo render_info = get_rendering_info(g_pass);
+            VkCommandBuffer cmd = fctx.get_cmd_buffer();
+            
+            vkCmdBeginRendering(cmd, &render_info);
+            pass->execute(ctx);
+            vkCmdEndRendering(cmd);
+        } else {
+            pass->execute(ctx);
+        }
     }
     reset();
 }

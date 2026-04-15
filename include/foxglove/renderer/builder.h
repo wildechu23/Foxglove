@@ -10,8 +10,7 @@
 
 class PassBuilder {
 public:
-    PassBuilder(FrameGraph* fg, const std::string& name, PassType type) : 
-        m_fg(fg), m_name(name), m_type(type) {}
+    PassBuilder(FrameGraph* fg, const std::string& name, PassType type);
     
     // Descriptor binding
     PassBuilder& bind_buffer(FGBufferHandle handle,
@@ -28,15 +27,27 @@ public:
 
     PassBuilder& bind_depth_attachment(FGTextureHandle handle,
             LoadOp load_op, StoreOp store_op,
-            std::optional<Color> clear_value = std::nullopt);
+            std::optional<float> clear_value = std::nullopt);
 
     PassBuilder& bind_stencil_attachment(FGTextureHandle handle,
             LoadOp load_op, StoreOp store_op,
-            std::optional<Color> clear_value = std::nullopt);
+            std::optional<uint32_t> clear_value = std::nullopt);
+
 
     PassBuilder& bind_depth_stencil_attachment(FGTextureHandle handle,
             LoadOp load_op, StoreOp store_op,
-            std::optional<Color> clear_value = std::nullopt);
+            std::optional<float> depth_clear_value = std::nullopt,
+            std::optional<uint32_t> stencil_clear_value = std::nullopt);
+
+    PassBuilder& set_render_area(VkRect2D rect) { 
+        m_render_area = rect;
+        return *this;
+    }
+
+    PassBuilder& set_layer_count(uint32_t count) {
+        m_layer_count = count;
+        return *this;
+    }
     
     PassBuilder& present(FGTextureHandle handle);
 
@@ -56,9 +67,12 @@ private:
     std::unordered_map<uint32_t, BindingGroup> m_bind_groups;
 
     // Graphics
-    std::vector<RenderAttachment> m_color_attachments;
-    RenderAttachment m_depth_attachment;
-    RenderAttachment m_stencil_attachment;
+    std::vector<ColorAttachment> m_color_attachments;
+    std::optional<DepthAttachment> m_depth_attachment;
+    std::optional<StencilAttachment> m_stencil_attachment;
+
+    VkRect2D m_render_area;
+    uint32_t m_layer_count = 1;
 
     std::function<void(PassContext&)> m_execute_fn;
 };

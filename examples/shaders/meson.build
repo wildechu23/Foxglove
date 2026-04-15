@@ -8,8 +8,11 @@ glslc = find_program(
         '/usr/local/bin',
     ]
 )
+
 shader_sources = files([
     'gradient.comp',
+    'colored_triangle.vert',
+    'colored_triangle.frag',
 ])
 
 

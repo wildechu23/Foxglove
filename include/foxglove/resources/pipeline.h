@@ -90,10 +90,10 @@ struct GraphicsPipelineDesc {
     VkPipelineDepthStencilStateCreateInfo               m_depth_stencil;
 
     // VkPipelineRenderingCreateInfo
-    std::vector<VkFormat>                               m_color_attachment_formats;
-    VkFormat                                            m_depth_attachment_format;
-    VkFormat                                            m_stencil_attachment_format;
-    uint32_t                                            m_view_mask;
+    std::vector<VkFormat>   m_color_attachment_formats;
+    VkFormat                m_depth_attachment_format = VK_FORMAT_UNDEFINED;
+    VkFormat                m_stencil_attachment_format = VK_FORMAT_UNDEFINED;
+    uint32_t                m_view_mask = 0;
 
     // skip renderpass because dynamic rendering
     
@@ -131,7 +131,6 @@ struct GraphicsPipelineDesc {
 };
 
 struct DrawConfig {
-    VkRect2D render_area;
     VkViewport viewport;
     VkRect2D scissor;
 };
