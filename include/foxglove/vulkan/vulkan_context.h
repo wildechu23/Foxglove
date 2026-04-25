@@ -18,8 +18,11 @@ public:
     VkSurfaceKHR get_surface() const { return m_surface; }
     VmaAllocator get_allocator() const { return m_allocator; }
 
-    VkQueue& get_graphics_queue() { return m_graphics_queue; }
+    VkQueue get_graphics_queue() { return m_graphics_queue; }
     uint32_t get_graphics_queue_family() const { return m_graphics_queue_family_index; }
+    
+    VkQueue get_transfer_queue() { return m_transfer_queue; }
+    uint32_t get_transfer_queue_family() const { return m_transfer_queue_family_index; }
 private:
     bool bUseValidationLayers = true;
     
@@ -31,6 +34,9 @@ private:
 
     VkQueue m_graphics_queue;
     uint32_t m_graphics_queue_family_index;
+
+    VkQueue m_transfer_queue;
+    uint32_t m_transfer_queue_family_index;
 
     VmaAllocator m_allocator;
 };

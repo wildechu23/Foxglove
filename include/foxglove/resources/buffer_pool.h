@@ -1,8 +1,9 @@
 #pragma once
 
 #include "foxglove/resources/resource_pool.h"
-#include "foxglove/resources/handle.h"
+#include "foxglove/core/handle.h"
 
+/*
 class BufferPool : public ResourcePool<BufferResource, BufferHandle> {
     VkDevice device;
     VmaAllocator allocator;
@@ -28,3 +29,4 @@ public:
 
     // FREE TO ADD BUFFER SPECIFIC FUNCTIONS
 };
+*/

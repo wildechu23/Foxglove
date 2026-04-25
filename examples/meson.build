@@ -8,6 +8,9 @@ testexe = executable('testexe',
   sources: spirv_targets,
 )
 
+test_env = environment()
+test_env.set('TEST_SOURCE_DIR', meson.current_source_dir())
 
 test('foxglove test', testexe,
+  env: test_env,
   workdir: meson.current_build_dir())

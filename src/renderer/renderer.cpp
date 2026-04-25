@@ -21,6 +21,9 @@ void Renderer::init() {
     );
 
     m_fg.init(&m_ctx, &m_swapchain);
+    m_rm.init(&m_ctx);
+    m_um.init(&m_ctx, &m_rm);
+
     m_sl.init(m_ctx.get_device());
     m_pm.init(m_ctx.get_device());
     
@@ -34,7 +37,7 @@ void Renderer::init() {
     //m_frames = std::vector<FrameContext>(m_swapchain.get_image_count());
 
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
-        m_frames[i].init(m_ctx);
+        m_frames[i].init(&m_ctx);
     }
 }
 
@@ -129,7 +132,7 @@ void Renderer::draw() {
 		.pSignalSemaphoreInfos = &signal_info
 	};
    
-    VkQueue& graphics_queue = m_ctx.get_graphics_queue();
+    VkQueue graphics_queue = m_ctx.get_graphics_queue();
     vkQueueSubmit2(graphics_queue, 1, &submit, fctx.get_render_fence());
 
 	VkPresentInfoKHR present_info = {
@@ -152,11 +155,13 @@ void Renderer::cleanup() {
     vkDeviceWaitIdle(m_ctx.get_device());
 
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
-        m_frames[i].cleanup(m_ctx.get_device(), m_ctx.get_allocator());
+        m_frames[i].cleanup();
     }
     
     m_fg.reset();
-
+    
+    m_um.cleanup();
+    m_rm.cleanup();
     m_pm.cleanup();
     m_sl.cleanup();
     

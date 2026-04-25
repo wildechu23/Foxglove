@@ -4,6 +4,7 @@ subdir('window')
 subdir('renderer')
 subdir('resources')
 subdir('memory')
+subdir('framegraph')
 
 sources = [
   core_sources,
@@ -12,13 +13,14 @@ sources = [
   renderer_sources,
   resources_sources,
   memory_sources,
+  fg_sources,
 ]
 
 foxglove = library(
   'foxglove',
   sources,
   include_directories: inc,
-  dependencies: [vulkan_dep, glfw_dep, glm_dep, third_party_deps],
+  dependencies: [library_deps, third_party_deps],
   install: true
 )
 

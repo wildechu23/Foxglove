@@ -1,3 +1,5 @@
+cmake = import('cmake')
+
 vkb_inc = include_directories('vkbootstrap')
 vma_inc = include_directories('vma')
 spirv_reflect_inc = include_directories('spirv-reflect')

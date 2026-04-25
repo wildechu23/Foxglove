@@ -33,6 +33,7 @@ void VulkanContext::init(GLFWwindow* window) {
 	VkPhysicalDeviceVulkan12Features features12 {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .descriptorIndexing = true,
+        .timelineSemaphore = true,
         .bufferDeviceAddress = true
     };
 
@@ -58,6 +59,9 @@ void VulkanContext::init(GLFWwindow* window) {
 	
 	m_graphics_queue = vkb_device.get_queue(vkb::QueueType::graphics).value();
 	m_graphics_queue_family_index = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
+
+    m_transfer_queue = vkb_device.get_queue(vkb::QueueType::transfer).value();
+    m_transfer_queue_family_index = vkb_device.get_queue_index(vkb::QueueType::transfer).value();
 
 	VmaAllocatorCreateInfo allocator_info = {
 		.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,

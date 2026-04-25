@@ -3,6 +3,7 @@
 #include "foxglove/resources/resource_pool.h"
 #include "foxglove/resources/handle.h"
 
+/*
 // TODO: CONSIDER ADDING CREATE AND DESTROY TO BASE CLASS?
 class TexturePool : public ResourcePool<TextureResource, TextureHandle> {
     VkDevice device;
@@ -28,4 +29,4 @@ public:
     }
 };
 
-
+*/
