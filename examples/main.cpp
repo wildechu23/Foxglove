@@ -77,6 +77,7 @@ int main() {
         if (dt > max_update_dt) dt = max_update_dt;
 
         window.update();
+        input_manager.update();
         camera.update(input_manager, dt);
 
         um.process_completions();

@@ -45,7 +45,6 @@ void Camera::update(const InputManager& input, float delta_time) {
 
     // TODO: FIX MOUSE MOVEMENT
 
-
 	glm::mat4 camera_rotation = get_rotation_matrix();
 	position += glm::vec3(camera_rotation * 
             glm::vec4(velocity * delta_time, 0.f));
@@ -55,4 +54,5 @@ void Camera::update(const InputManager& input, float delta_time) {
     pitch += -mouse_delta.y / 300.f;
 
     //std::cout << position.x << ", " << position.z << std::endl;
+    //std::cout << mouse_delta.x << ", " << mouse_delta.y << std::endl;
 }

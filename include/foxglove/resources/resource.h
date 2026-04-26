@@ -102,17 +102,22 @@ public:
                 nullptr);
 
         VkImageSubresourceRange rview_srr = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .levelCount = VK_REMAINING_MIP_LEVELS,
-            .layerCount = 1
+            .aspectMask = get_aspect_mask(desc.usage, desc.format),
+            .levelCount = desc.mip_levels, 
+            .layerCount = desc.array_layers
         };
+
+
+        VkImageViewType view_type = (desc.array_layers > 1) 
+            ? VK_IMAGE_VIEW_TYPE_2D_ARRAY 
+            : VK_IMAGE_VIEW_TYPE_2D;
 
 
         VkImageViewCreateInfo rview_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = nullptr,
             .image = image,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .viewType = view_type,
             .format = desc.format,
             .subresourceRange = rview_srr
         };
@@ -130,5 +135,40 @@ public:
         // TODO: add check that its initialized
         vkDestroyImageView(device, view, nullptr);
         vmaDestroyImage(allocator, image, allocation);
+    }
+
+    VkImageAspectFlags get_aspect_mask(VkImageUsageFlags usage,
+            VkFormat format) {
+        VkImageAspectFlags aspect_mask = 0;
+
+        if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            switch (format) {
+                case VK_FORMAT_D16_UNORM:
+                case VK_FORMAT_X8_D24_UNORM_PACK32:
+                case VK_FORMAT_D32_SFLOAT:
+                    aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    break;
+
+                case VK_FORMAT_S8_UINT:
+                    aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    break;
+
+                case VK_FORMAT_D16_UNORM_S8_UINT:
+                case VK_FORMAT_D24_UNORM_S8_UINT:
+                case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                    aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT 
+                        | VK_IMAGE_ASPECT_STENCIL_BIT;
+                    break;
+
+                default:
+                    assert(false && "Format doesn't support depth/stencil");
+                    aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    break;
+            }
+        } else {
+            aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+
+        return aspect_mask;
     }
 };
