@@ -2,7 +2,6 @@
 
 #include "foxglove/vulkan/vulkan_context.h"
 
-// TODO: ADD MIP AND ARRAY
 struct TextureDesc {
     VkExtent2D extent;
     VkFormat format;

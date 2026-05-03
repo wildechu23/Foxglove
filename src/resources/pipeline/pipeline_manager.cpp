@@ -240,10 +240,6 @@ void PipelineManager::create_graphics_desc(
     desc->m_color_blend_attachments.push_back(
             config.color_blend_attachment);
     
-    // TODO: REMOVE THESE
-    desc->m_vertex_bindings = {};
-    desc->m_vertex_attributes = {};
-
     desc->m_multisampling = config.multisampling;
     desc->m_input_assembly = config.input_assembly;
     desc->m_rasterizer = config.rasterizer;
@@ -332,10 +328,8 @@ void PipelineManager::build_graphics_pipeline(
     VkPipelineVertexInputStateCreateInfo _vertexInputInfo = { 
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
-        .vertexBindingDescriptionCount = static_cast<uint32_t>(desc.m_vertex_bindings.size()),
-        .pVertexBindingDescriptions = desc.m_vertex_bindings.data(),
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(desc.m_vertex_attributes.size()),
-        .pVertexAttributeDescriptions = desc.m_vertex_attributes.data()
+        .vertexBindingDescriptionCount = 0,
+        .vertexAttributeDescriptionCount = 0
 	};
     
     // Dynamic states

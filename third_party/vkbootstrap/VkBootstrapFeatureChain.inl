@@ -2115,6 +2115,26 @@ void merge_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(VkPhysicalDeviceFragme
     current.attachmentFragmentShadingRate = current.attachmentFragmentShadingRate || merge_in.attachmentFragmentShadingRate;
 }
 #endif //(defined(VK_KHR_fragment_shading_rate))
+#if (defined(VK_KHR_shader_constant_data))
+void compare_VkPhysicalDeviceShaderConstantDataFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceShaderConstantDataFeaturesKHR const& supported, VkPhysicalDeviceShaderConstantDataFeaturesKHR const& requested) {
+    if (requested.shaderConstantData && !supported.shaderConstantData) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderConstantDataFeaturesKHR::shaderConstantData");
+    }
+}
+void merge_VkPhysicalDeviceShaderConstantDataFeaturesKHR(VkPhysicalDeviceShaderConstantDataFeaturesKHR & current, VkPhysicalDeviceShaderConstantDataFeaturesKHR const& merge_in) {
+    current.shaderConstantData = current.shaderConstantData || merge_in.shaderConstantData;
+}
+#endif //(defined(VK_KHR_shader_constant_data))
+#if (defined(VK_KHR_shader_abort))
+void compare_VkPhysicalDeviceShaderAbortFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceShaderAbortFeaturesKHR const& supported, VkPhysicalDeviceShaderAbortFeaturesKHR const& requested) {
+    if (requested.shaderAbort && !supported.shaderAbort) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort");
+    }
+}
+void merge_VkPhysicalDeviceShaderAbortFeaturesKHR(VkPhysicalDeviceShaderAbortFeaturesKHR & current, VkPhysicalDeviceShaderAbortFeaturesKHR const& merge_in) {
+    current.shaderAbort = current.shaderAbort || merge_in.shaderAbort;
+}
+#endif //(defined(VK_KHR_shader_abort))
 #if (defined(VK_KHR_shader_quad_control))
 void compare_VkPhysicalDeviceShaderQuadControlFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceShaderQuadControlFeaturesKHR const& supported, VkPhysicalDeviceShaderQuadControlFeaturesKHR const& requested) {
     if (requested.shaderQuadControl && !supported.shaderQuadControl) {
@@ -2155,6 +2175,16 @@ void merge_VkPhysicalDevicePresentIdFeaturesKHR(VkPhysicalDevicePresentIdFeature
     current.presentId = current.presentId || merge_in.presentId;
 }
 #endif //(defined(VK_KHR_present_id))
+#if (defined(VK_KHR_device_address_commands))
+void compare_VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR const& supported, VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR const& requested) {
+    if (requested.deviceAddressCommands && !supported.deviceAddressCommands) {
+        error_list.push_back("Missing feature VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR::deviceAddressCommands");
+    }
+}
+void merge_VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR(VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR & current, VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR const& merge_in) {
+    current.deviceAddressCommands = current.deviceAddressCommands || merge_in.deviceAddressCommands;
+}
+#endif //(defined(VK_KHR_device_address_commands))
 #if (defined(VK_KHR_fragment_shader_barycentric))
 void compare_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR const& supported, VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR const& requested) {
     if (requested.fragmentShaderBarycentric && !supported.fragmentShaderBarycentric) {
@@ -2301,6 +2331,16 @@ void merge_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT(VkPhysicalDeviceSwap
     current.swapchainMaintenance1 = current.swapchainMaintenance1 || merge_in.swapchainMaintenance1;
 }
 #endif //(defined(VK_EXT_swapchain_maintenance1))
+#if (defined(VK_KHR_internally_synchronized_queues))
+void compare_VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR const& supported, VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR const& requested) {
+    if (requested.internallySynchronizedQueues && !supported.internallySynchronizedQueues) {
+        error_list.push_back("Missing feature VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR::internallySynchronizedQueues");
+    }
+}
+void merge_VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR(VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR & current, VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR const& merge_in) {
+    current.internallySynchronizedQueues = current.internallySynchronizedQueues || merge_in.internallySynchronizedQueues;
+}
+#endif //(defined(VK_KHR_internally_synchronized_queues))
 #if (defined(VK_KHR_cooperative_matrix))
 void compare_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceCooperativeMatrixFeaturesKHR const& supported, VkPhysicalDeviceCooperativeMatrixFeaturesKHR const& requested) {
     if (requested.cooperativeMatrix && !supported.cooperativeMatrix) {
@@ -2441,6 +2481,28 @@ void merge_VkPhysicalDeviceMaintenance7FeaturesKHR(VkPhysicalDeviceMaintenance7F
     current.maintenance7 = current.maintenance7 || merge_in.maintenance7;
 }
 #endif //(defined(VK_KHR_maintenance7))
+#if (defined(VK_KHR_device_fault))
+void compare_VkPhysicalDeviceFaultFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceFaultFeaturesKHR const& supported, VkPhysicalDeviceFaultFeaturesKHR const& requested) {
+    if (requested.deviceFault && !supported.deviceFault) {
+        error_list.push_back("Missing feature VkPhysicalDeviceFaultFeaturesKHR::deviceFault");
+    }
+    if (requested.deviceFaultVendorBinary && !supported.deviceFaultVendorBinary) {
+        error_list.push_back("Missing feature VkPhysicalDeviceFaultFeaturesKHR::deviceFaultVendorBinary");
+    }
+    if (requested.deviceFaultReportMasked && !supported.deviceFaultReportMasked) {
+        error_list.push_back("Missing feature VkPhysicalDeviceFaultFeaturesKHR::deviceFaultReportMasked");
+    }
+    if (requested.deviceFaultDeviceLostOnMasked && !supported.deviceFaultDeviceLostOnMasked) {
+        error_list.push_back("Missing feature VkPhysicalDeviceFaultFeaturesKHR::deviceFaultDeviceLostOnMasked");
+    }
+}
+void merge_VkPhysicalDeviceFaultFeaturesKHR(VkPhysicalDeviceFaultFeaturesKHR & current, VkPhysicalDeviceFaultFeaturesKHR const& merge_in) {
+    current.deviceFault = current.deviceFault || merge_in.deviceFault;
+    current.deviceFaultVendorBinary = current.deviceFaultVendorBinary || merge_in.deviceFaultVendorBinary;
+    current.deviceFaultReportMasked = current.deviceFaultReportMasked || merge_in.deviceFaultReportMasked;
+    current.deviceFaultDeviceLostOnMasked = current.deviceFaultDeviceLostOnMasked || merge_in.deviceFaultDeviceLostOnMasked;
+}
+#endif //(defined(VK_KHR_device_fault))
 #if (defined(VK_KHR_maintenance8))
 void compare_VkPhysicalDeviceMaintenance8FeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceMaintenance8FeaturesKHR const& supported, VkPhysicalDeviceMaintenance8FeaturesKHR const& requested) {
     if (requested.maintenance8 && !supported.maintenance8) {
@@ -2657,6 +2719,20 @@ void merge_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(VkPhysicalDeviceShaderEnque
     current.shaderMeshEnqueue = current.shaderMeshEnqueue || merge_in.shaderMeshEnqueue;
 }
 #endif //defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_AMDX_shader_enqueue))
+#if (defined(VK_EXT_descriptor_heap))
+void compare_VkPhysicalDeviceDescriptorHeapFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceDescriptorHeapFeaturesEXT const& supported, VkPhysicalDeviceDescriptorHeapFeaturesEXT const& requested) {
+    if (requested.descriptorHeap && !supported.descriptorHeap) {
+        error_list.push_back("Missing feature VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeap");
+    }
+    if (requested.descriptorHeapCaptureReplay && !supported.descriptorHeapCaptureReplay) {
+        error_list.push_back("Missing feature VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeapCaptureReplay");
+    }
+}
+void merge_VkPhysicalDeviceDescriptorHeapFeaturesEXT(VkPhysicalDeviceDescriptorHeapFeaturesEXT & current, VkPhysicalDeviceDescriptorHeapFeaturesEXT const& merge_in) {
+    current.descriptorHeap = current.descriptorHeap || merge_in.descriptorHeap;
+    current.descriptorHeapCaptureReplay = current.descriptorHeapCaptureReplay || merge_in.descriptorHeapCaptureReplay;
+}
+#endif //(defined(VK_EXT_descriptor_heap))
 #if (defined(VK_EXT_blend_operation_advanced))
 void compare_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT const& supported, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT const& requested) {
     if (requested.advancedBlendCoherentOperations && !supported.advancedBlendCoherentOperations) {
@@ -2701,6 +2777,16 @@ void merge_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(VkPhysicalDevice
     current.representativeFragmentTest = current.representativeFragmentTest || merge_in.representativeFragmentTest;
 }
 #endif //(defined(VK_NV_representative_fragment_test))
+#if (defined(VK_QCOM_cooperative_matrix_conversion))
+void compare_VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM(std::vector<std::string> & error_list, VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM const& supported, VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM const& requested) {
+    if (requested.cooperativeMatrixConversion && !supported.cooperativeMatrixConversion) {
+        error_list.push_back("Missing feature VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM::cooperativeMatrixConversion");
+    }
+}
+void merge_VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM(VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM & current, VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM const& merge_in) {
+    current.cooperativeMatrixConversion = current.cooperativeMatrixConversion || merge_in.cooperativeMatrixConversion;
+}
+#endif //(defined(VK_QCOM_cooperative_matrix_conversion))
 #if (defined(VK_NV_mesh_shader))
 void compare_VkPhysicalDeviceMeshShaderFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDeviceMeshShaderFeaturesNV const& supported, VkPhysicalDeviceMeshShaderFeaturesNV const& requested) {
     if (requested.taskShader && !supported.taskShader) {
@@ -2735,6 +2821,24 @@ void merge_VkPhysicalDeviceExclusiveScissorFeaturesNV(VkPhysicalDeviceExclusiveS
     current.exclusiveScissor = current.exclusiveScissor || merge_in.exclusiveScissor;
 }
 #endif //(defined(VK_NV_scissor_exclusive))
+#if (defined(VK_EXT_present_timing))
+void compare_VkPhysicalDevicePresentTimingFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDevicePresentTimingFeaturesEXT const& supported, VkPhysicalDevicePresentTimingFeaturesEXT const& requested) {
+    if (requested.presentTiming && !supported.presentTiming) {
+        error_list.push_back("Missing feature VkPhysicalDevicePresentTimingFeaturesEXT::presentTiming");
+    }
+    if (requested.presentAtAbsoluteTime && !supported.presentAtAbsoluteTime) {
+        error_list.push_back("Missing feature VkPhysicalDevicePresentTimingFeaturesEXT::presentAtAbsoluteTime");
+    }
+    if (requested.presentAtRelativeTime && !supported.presentAtRelativeTime) {
+        error_list.push_back("Missing feature VkPhysicalDevicePresentTimingFeaturesEXT::presentAtRelativeTime");
+    }
+}
+void merge_VkPhysicalDevicePresentTimingFeaturesEXT(VkPhysicalDevicePresentTimingFeaturesEXT & current, VkPhysicalDevicePresentTimingFeaturesEXT const& merge_in) {
+    current.presentTiming = current.presentTiming || merge_in.presentTiming;
+    current.presentAtAbsoluteTime = current.presentAtAbsoluteTime || merge_in.presentAtAbsoluteTime;
+    current.presentAtRelativeTime = current.presentAtRelativeTime || merge_in.presentAtRelativeTime;
+}
+#endif //(defined(VK_EXT_present_timing))
 #if (defined(VK_INTEL_shader_integer_functions2))
 void compare_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(std::vector<std::string> & error_list, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL const& supported, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL const& requested) {
     if (requested.shaderIntegerFunctions2 && !supported.shaderIntegerFunctions2) {
@@ -3121,6 +3225,16 @@ void merge_VkPhysicalDeviceCustomBorderColorFeaturesEXT(VkPhysicalDeviceCustomBo
     current.customBorderColorWithoutFormat = current.customBorderColorWithoutFormat || merge_in.customBorderColorWithoutFormat;
 }
 #endif //(defined(VK_EXT_custom_border_color))
+#if (defined(VK_EXT_texture_compression_astc_3d))
+void compare_VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT const& supported, VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT const& requested) {
+    if (requested.textureCompressionASTC_3D && !supported.textureCompressionASTC_3D) {
+        error_list.push_back("Missing feature VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT::textureCompressionASTC_3D");
+    }
+}
+void merge_VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT(VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT & current, VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT const& merge_in) {
+    current.textureCompressionASTC_3D = current.textureCompressionASTC_3D || merge_in.textureCompressionASTC_3D;
+}
+#endif //(defined(VK_EXT_texture_compression_astc_3d))
 #if (defined(VK_NV_present_barrier))
 void compare_VkPhysicalDevicePresentBarrierFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDevicePresentBarrierFeaturesNV const& supported, VkPhysicalDevicePresentBarrierFeaturesNV const& requested) {
     if (requested.presentBarrier && !supported.presentBarrier) {
@@ -3141,6 +3255,16 @@ void merge_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(VkPhysicalDeviceDiagnosti
     current.diagnosticsConfig = current.diagnosticsConfig || merge_in.diagnosticsConfig;
 }
 #endif //(defined(VK_NV_device_diagnostics_config))
+#if (defined(VK_QCOM_queue_perf_hint))
+void compare_VkPhysicalDeviceQueuePerfHintFeaturesQCOM(std::vector<std::string> & error_list, VkPhysicalDeviceQueuePerfHintFeaturesQCOM const& supported, VkPhysicalDeviceQueuePerfHintFeaturesQCOM const& requested) {
+    if (requested.queuePerfHint && !supported.queuePerfHint) {
+        error_list.push_back("Missing feature VkPhysicalDeviceQueuePerfHintFeaturesQCOM::queuePerfHint");
+    }
+}
+void merge_VkPhysicalDeviceQueuePerfHintFeaturesQCOM(VkPhysicalDeviceQueuePerfHintFeaturesQCOM & current, VkPhysicalDeviceQueuePerfHintFeaturesQCOM const& merge_in) {
+    current.queuePerfHint = current.queuePerfHint || merge_in.queuePerfHint;
+}
+#endif //(defined(VK_QCOM_queue_perf_hint))
 #if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_cuda_kernel_launch))
 void compare_VkPhysicalDeviceCudaKernelLaunchFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDeviceCudaKernelLaunchFeaturesNV const& supported, VkPhysicalDeviceCudaKernelLaunchFeaturesNV const& requested) {
     if (requested.cudaKernelLaunchFeatures && !supported.cudaKernelLaunchFeatures) {
@@ -4479,6 +4603,26 @@ void merge_VkPhysicalDeviceImageAlignmentControlFeaturesMESA(VkPhysicalDeviceIma
     current.imageAlignmentControl = current.imageAlignmentControl || merge_in.imageAlignmentControl;
 }
 #endif //(defined(VK_MESA_image_alignment_control))
+#if (defined(VK_NV_push_constant_bank))
+void compare_VkPhysicalDevicePushConstantBankFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDevicePushConstantBankFeaturesNV const& supported, VkPhysicalDevicePushConstantBankFeaturesNV const& requested) {
+    if (requested.pushConstantBank && !supported.pushConstantBank) {
+        error_list.push_back("Missing feature VkPhysicalDevicePushConstantBankFeaturesNV::pushConstantBank");
+    }
+}
+void merge_VkPhysicalDevicePushConstantBankFeaturesNV(VkPhysicalDevicePushConstantBankFeaturesNV & current, VkPhysicalDevicePushConstantBankFeaturesNV const& merge_in) {
+    current.pushConstantBank = current.pushConstantBank || merge_in.pushConstantBank;
+}
+#endif //(defined(VK_NV_push_constant_bank))
+#if (defined(VK_EXT_ray_tracing_invocation_reorder))
+void compare_VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT const& supported, VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT const& requested) {
+    if (requested.rayTracingInvocationReorder && !supported.rayTracingInvocationReorder) {
+        error_list.push_back("Missing feature VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT::rayTracingInvocationReorder");
+    }
+}
+void merge_VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT(VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT & current, VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT const& merge_in) {
+    current.rayTracingInvocationReorder = current.rayTracingInvocationReorder || merge_in.rayTracingInvocationReorder;
+}
+#endif //(defined(VK_EXT_ray_tracing_invocation_reorder))
 #if (defined(VK_EXT_depth_clamp_control))
 void compare_VkPhysicalDeviceDepthClampControlFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceDepthClampControlFeaturesEXT const& supported, VkPhysicalDeviceDepthClampControlFeaturesEXT const& requested) {
     if (requested.depthClampControl && !supported.depthClampControl) {
@@ -4553,6 +4697,16 @@ void merge_VkPhysicalDevicePerformanceCountersByRegionFeaturesARM(VkPhysicalDevi
     current.performanceCountersByRegion = current.performanceCountersByRegion || merge_in.performanceCountersByRegion;
 }
 #endif //(defined(VK_ARM_performance_counters_by_region))
+#if (defined(VK_ARM_shader_instrumentation))
+void compare_VkPhysicalDeviceShaderInstrumentationFeaturesARM(std::vector<std::string> & error_list, VkPhysicalDeviceShaderInstrumentationFeaturesARM const& supported, VkPhysicalDeviceShaderInstrumentationFeaturesARM const& requested) {
+    if (requested.shaderInstrumentation && !supported.shaderInstrumentation) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderInstrumentationFeaturesARM::shaderInstrumentation");
+    }
+}
+void merge_VkPhysicalDeviceShaderInstrumentationFeaturesARM(VkPhysicalDeviceShaderInstrumentationFeaturesARM & current, VkPhysicalDeviceShaderInstrumentationFeaturesARM const& merge_in) {
+    current.shaderInstrumentation = current.shaderInstrumentation || merge_in.shaderInstrumentation;
+}
+#endif //(defined(VK_ARM_shader_instrumentation))
 #if (defined(VK_EXT_vertex_attribute_robustness))
 void compare_VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT const& supported, VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT const& requested) {
     if (requested.vertexAttributeRobustness && !supported.vertexAttributeRobustness) {
@@ -4583,7 +4737,7 @@ void merge_VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE(VkPhysicalDevi
     current.fragmentDensityMapLayered = current.fragmentDensityMapLayered || merge_in.fragmentDensityMapLayered;
 }
 #endif //(defined(VK_VALVE_fragment_density_map_layered))
-#if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_present_metering))
+#if (VK_HEADER_VERSION >= 345 || defined(VK_ENABLE_BETA_EXTENSIONS)) && (defined(VK_NV_present_metering))
 void compare_VkPhysicalDevicePresentMeteringFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDevicePresentMeteringFeaturesNV const& supported, VkPhysicalDevicePresentMeteringFeaturesNV const& requested) {
     if (requested.presentMetering && !supported.presentMetering) {
         error_list.push_back("Missing feature VkPhysicalDevicePresentMeteringFeaturesNV::presentMetering");
@@ -4592,7 +4746,7 @@ void compare_VkPhysicalDevicePresentMeteringFeaturesNV(std::vector<std::string> 
 void merge_VkPhysicalDevicePresentMeteringFeaturesNV(VkPhysicalDevicePresentMeteringFeaturesNV & current, VkPhysicalDevicePresentMeteringFeaturesNV const& merge_in) {
     current.presentMetering = current.presentMetering || merge_in.presentMetering;
 }
-#endif //defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_present_metering))
+#endif //(VK_HEADER_VERSION >= 345 || defined(VK_ENABLE_BETA_EXTENSIONS)) && (defined(VK_NV_present_metering))
 #if (defined(VK_EXT_zero_initialize_device_memory))
 void compare_VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT const& supported, VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT const& requested) {
     if (requested.zeroInitializeDeviceMemory && !supported.zeroInitializeDeviceMemory) {
@@ -4613,6 +4767,16 @@ void merge_VkPhysicalDeviceShader64BitIndexingFeaturesEXT(VkPhysicalDeviceShader
     current.shader64BitIndexing = current.shader64BitIndexing || merge_in.shader64BitIndexing;
 }
 #endif //(defined(VK_EXT_shader_64bit_indexing))
+#if (defined(VK_EXT_custom_resolve))
+void compare_VkPhysicalDeviceCustomResolveFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceCustomResolveFeaturesEXT const& supported, VkPhysicalDeviceCustomResolveFeaturesEXT const& requested) {
+    if (requested.customResolve && !supported.customResolve) {
+        error_list.push_back("Missing feature VkPhysicalDeviceCustomResolveFeaturesEXT::customResolve");
+    }
+}
+void merge_VkPhysicalDeviceCustomResolveFeaturesEXT(VkPhysicalDeviceCustomResolveFeaturesEXT & current, VkPhysicalDeviceCustomResolveFeaturesEXT const& merge_in) {
+    current.customResolve = current.customResolve || merge_in.customResolve;
+}
+#endif //(defined(VK_EXT_custom_resolve))
 #if (defined(VK_QCOM_data_graph_model))
 void compare_VkPhysicalDeviceDataGraphModelFeaturesQCOM(std::vector<std::string> & error_list, VkPhysicalDeviceDataGraphModelFeaturesQCOM const& supported, VkPhysicalDeviceDataGraphModelFeaturesQCOM const& requested) {
     if (requested.dataGraphModel && !supported.dataGraphModel) {
@@ -4623,6 +4787,26 @@ void merge_VkPhysicalDeviceDataGraphModelFeaturesQCOM(VkPhysicalDeviceDataGraphM
     current.dataGraphModel = current.dataGraphModel || merge_in.dataGraphModel;
 }
 #endif //(defined(VK_QCOM_data_graph_model))
+#if (defined(VK_ARM_data_graph_optical_flow))
+void compare_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(std::vector<std::string> & error_list, VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM const& supported, VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM const& requested) {
+    if (requested.dataGraphOpticalFlow && !supported.dataGraphOpticalFlow) {
+        error_list.push_back("Missing feature VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM::dataGraphOpticalFlow");
+    }
+}
+void merge_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM & current, VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM const& merge_in) {
+    current.dataGraphOpticalFlow = current.dataGraphOpticalFlow || merge_in.dataGraphOpticalFlow;
+}
+#endif //(defined(VK_ARM_data_graph_optical_flow))
+#if (defined(VK_EXT_shader_long_vector))
+void compare_VkPhysicalDeviceShaderLongVectorFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceShaderLongVectorFeaturesEXT const& supported, VkPhysicalDeviceShaderLongVectorFeaturesEXT const& requested) {
+    if (requested.longVector && !supported.longVector) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector");
+    }
+}
+void merge_VkPhysicalDeviceShaderLongVectorFeaturesEXT(VkPhysicalDeviceShaderLongVectorFeaturesEXT & current, VkPhysicalDeviceShaderLongVectorFeaturesEXT const& merge_in) {
+    current.longVector = current.longVector || merge_in.longVector;
+}
+#endif //(defined(VK_EXT_shader_long_vector))
 #if (defined(VK_SEC_pipeline_cache_incremental_mode))
 void compare_VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC(std::vector<std::string> & error_list, VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC const& supported, VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC const& requested) {
     if (requested.pipelineCacheIncrementalMode && !supported.pipelineCacheIncrementalMode) {
@@ -4643,6 +4827,58 @@ void merge_VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT(VkPhysical
     current.shaderUniformBufferUnsizedArray = current.shaderUniformBufferUnsizedArray || merge_in.shaderUniformBufferUnsizedArray;
 }
 #endif //(defined(VK_EXT_shader_uniform_buffer_unsized_array))
+#if (defined(VK_NV_compute_occupancy_priority))
+void compare_VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV(std::vector<std::string> & error_list, VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV const& supported, VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV const& requested) {
+    if (requested.computeOccupancyPriority && !supported.computeOccupancyPriority) {
+        error_list.push_back("Missing feature VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV::computeOccupancyPriority");
+    }
+}
+void merge_VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV(VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV & current, VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV const& merge_in) {
+    current.computeOccupancyPriority = current.computeOccupancyPriority || merge_in.computeOccupancyPriority;
+}
+#endif //(defined(VK_NV_compute_occupancy_priority))
+#if (defined(VK_EXT_shader_subgroup_partitioned))
+void compare_VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT const& supported, VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT const& requested) {
+    if (requested.shaderSubgroupPartitioned && !supported.shaderSubgroupPartitioned) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT::shaderSubgroupPartitioned");
+    }
+}
+void merge_VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT(VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT & current, VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT const& merge_in) {
+    current.shaderSubgroupPartitioned = current.shaderSubgroupPartitioned || merge_in.shaderSubgroupPartitioned;
+}
+#endif //(defined(VK_EXT_shader_subgroup_partitioned))
+#if (defined(VK_VALVE_shader_mixed_float_dot_product))
+void compare_VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE(std::vector<std::string> & error_list, VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE const& supported, VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE const& requested) {
+    if (requested.shaderMixedFloatDotProductFloat16AccFloat32 && !supported.shaderMixedFloatDotProductFloat16AccFloat32) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat32");
+    }
+    if (requested.shaderMixedFloatDotProductFloat16AccFloat16 && !supported.shaderMixedFloatDotProductFloat16AccFloat16) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat16");
+    }
+    if (requested.shaderMixedFloatDotProductBFloat16Acc && !supported.shaderMixedFloatDotProductBFloat16Acc) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductBFloat16Acc");
+    }
+    if (requested.shaderMixedFloatDotProductFloat8AccFloat32 && !supported.shaderMixedFloatDotProductFloat8AccFloat32) {
+        error_list.push_back("Missing feature VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32");
+    }
+}
+void merge_VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE(VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE & current, VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE const& merge_in) {
+    current.shaderMixedFloatDotProductFloat16AccFloat32 = current.shaderMixedFloatDotProductFloat16AccFloat32 || merge_in.shaderMixedFloatDotProductFloat16AccFloat32;
+    current.shaderMixedFloatDotProductFloat16AccFloat16 = current.shaderMixedFloatDotProductFloat16AccFloat16 || merge_in.shaderMixedFloatDotProductFloat16AccFloat16;
+    current.shaderMixedFloatDotProductBFloat16Acc = current.shaderMixedFloatDotProductBFloat16Acc || merge_in.shaderMixedFloatDotProductBFloat16Acc;
+    current.shaderMixedFloatDotProductFloat8AccFloat32 = current.shaderMixedFloatDotProductFloat8AccFloat32 || merge_in.shaderMixedFloatDotProductFloat8AccFloat32;
+}
+#endif //(defined(VK_VALVE_shader_mixed_float_dot_product))
+#if (defined(VK_EXT_primitive_restart_index))
+void compare_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT(std::vector<std::string> & error_list, VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT const& supported, VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT const& requested) {
+    if (requested.primitiveRestartIndex && !supported.primitiveRestartIndex) {
+        error_list.push_back("Missing feature VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT::primitiveRestartIndex");
+    }
+}
+void merge_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT(VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT & current, VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT const& merge_in) {
+    current.primitiveRestartIndex = current.primitiveRestartIndex || merge_in.primitiveRestartIndex;
+}
+#endif //(defined(VK_EXT_primitive_restart_index))
 #if (defined(VK_KHR_acceleration_structure))
 void compare_VkPhysicalDeviceAccelerationStructureFeaturesKHR(std::vector<std::string> & error_list, VkPhysicalDeviceAccelerationStructureFeaturesKHR const& supported, VkPhysicalDeviceAccelerationStructureFeaturesKHR const& requested) {
     if (requested.accelerationStructure && !supported.accelerationStructure) {
@@ -5207,6 +5443,16 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR*>(requested));
             break;
 #endif
+#if (defined(VK_KHR_shader_constant_data))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR):
+            compare_VkPhysicalDeviceShaderConstantDataFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(requested));
+            break;
+#endif
+#if (defined(VK_KHR_shader_abort))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR):
+            compare_VkPhysicalDeviceShaderAbortFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR*>(requested));
+            break;
+#endif
 #if (defined(VK_KHR_shader_quad_control))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR):
             compare_VkPhysicalDeviceShaderQuadControlFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(requested));
@@ -5225,6 +5471,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
 #if (defined(VK_KHR_present_id))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR):
             compare_VkPhysicalDevicePresentIdFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDevicePresentIdFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDevicePresentIdFeaturesKHR*>(requested));
+            break;
+#endif
+#if (defined(VK_KHR_device_address_commands))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR):
+            compare_VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*>(requested));
             break;
 #endif
 #if (defined(VK_KHR_fragment_shader_barycentric))
@@ -5290,6 +5541,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT*>(requested));
             break;
 #endif
+#if (defined(VK_KHR_internally_synchronized_queues))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR):
+            compare_VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*>(requested));
+            break;
+#endif
 #if (defined(VK_KHR_cooperative_matrix))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR):
             compare_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(requested));
@@ -5347,6 +5603,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
 #if (defined(VK_KHR_maintenance7))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR):
             compare_VkPhysicalDeviceMaintenance7FeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR*>(requested));
+            break;
+#endif
+#if (defined(VK_KHR_device_fault))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR):
+            compare_VkPhysicalDeviceFaultFeaturesKHR(error_list, *reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR*>(supported), *reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR*>(requested));
             break;
 #endif
 #if (defined(VK_KHR_maintenance8))
@@ -5436,6 +5697,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX*>(requested));
             break;
 #endif
+#if (defined(VK_EXT_descriptor_heap))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT):
+            compare_VkPhysicalDeviceDescriptorHeapFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(requested));
+            break;
+#endif
 #if (defined(VK_EXT_blend_operation_advanced))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT):
             compare_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT*>(requested));
@@ -5456,6 +5722,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*>(requested));
             break;
 #endif
+#if (defined(VK_QCOM_cooperative_matrix_conversion))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM):
+            compare_VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM(error_list, *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(supported), *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(requested));
+            break;
+#endif
 #if (defined(VK_NV_mesh_shader))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV):
             compare_VkPhysicalDeviceMeshShaderFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV*>(requested));
@@ -5469,6 +5740,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
 #if (defined(VK_NV_scissor_exclusive))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV):
             compare_VkPhysicalDeviceExclusiveScissorFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDeviceExclusiveScissorFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDeviceExclusiveScissorFeaturesNV*>(requested));
+            break;
+#endif
+#if (defined(VK_EXT_present_timing))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT):
+            compare_VkPhysicalDevicePresentTimingFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT*>(requested));
             break;
 #endif
 #if (defined(VK_INTEL_shader_integer_functions2))
@@ -5585,6 +5861,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceCustomBorderColorFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceCustomBorderColorFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceCustomBorderColorFeaturesEXT*>(requested));
             break;
 #endif
+#if (defined(VK_EXT_texture_compression_astc_3d))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT):
+            compare_VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*>(requested));
+            break;
+#endif
 #if (defined(VK_NV_present_barrier))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV):
             compare_VkPhysicalDevicePresentBarrierFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV*>(requested));
@@ -5593,6 +5874,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
 #if (defined(VK_NV_device_diagnostics_config))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV):
             compare_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDeviceDiagnosticsConfigFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDeviceDiagnosticsConfigFeaturesNV*>(requested));
+            break;
+#endif
+#if (defined(VK_QCOM_queue_perf_hint))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM):
+            compare_VkPhysicalDeviceQueuePerfHintFeaturesQCOM(error_list, *reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(supported), *reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(requested));
             break;
 #endif
 #if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_cuda_kernel_launch))
@@ -6086,6 +6372,16 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceImageAlignmentControlFeaturesMESA(error_list, *reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA*>(supported), *reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA*>(requested));
             break;
 #endif
+#if (defined(VK_NV_push_constant_bank))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_FEATURES_NV):
+            compare_VkPhysicalDevicePushConstantBankFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV*>(requested));
+            break;
+#endif
+#if (defined(VK_EXT_ray_tracing_invocation_reorder))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT):
+            compare_VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(requested));
+            break;
+#endif
 #if (defined(VK_EXT_depth_clamp_control))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT):
             compare_VkPhysicalDeviceDepthClampControlFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT*>(requested));
@@ -6111,6 +6407,11 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDevicePerformanceCountersByRegionFeaturesARM(error_list, *reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*>(supported), *reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*>(requested));
             break;
 #endif
+#if (defined(VK_ARM_shader_instrumentation))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM):
+            compare_VkPhysicalDeviceShaderInstrumentationFeaturesARM(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM*>(requested));
+            break;
+#endif
 #if (defined(VK_EXT_vertex_attribute_robustness))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT):
             compare_VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT*>(requested));
@@ -6126,7 +6427,7 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE(error_list, *reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*>(supported), *reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*>(requested));
             break;
 #endif
-#if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_present_metering))
+#if (VK_HEADER_VERSION >= 345 || defined(VK_ENABLE_BETA_EXTENSIONS)) && (defined(VK_NV_present_metering))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV):
             compare_VkPhysicalDevicePresentMeteringFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(requested));
             break;
@@ -6141,9 +6442,24 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
             compare_VkPhysicalDeviceShader64BitIndexingFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(requested));
             break;
 #endif
+#if (defined(VK_EXT_custom_resolve))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT):
+            compare_VkPhysicalDeviceCustomResolveFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT*>(requested));
+            break;
+#endif
 #if (defined(VK_QCOM_data_graph_model))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM):
             compare_VkPhysicalDeviceDataGraphModelFeaturesQCOM(error_list, *reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(supported), *reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(requested));
+            break;
+#endif
+#if (defined(VK_ARM_data_graph_optical_flow))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM):
+            compare_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(error_list, *reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(supported), *reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(requested));
+            break;
+#endif
+#if (defined(VK_EXT_shader_long_vector))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT):
+            compare_VkPhysicalDeviceShaderLongVectorFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(requested));
             break;
 #endif
 #if (defined(VK_SEC_pipeline_cache_incremental_mode))
@@ -6154,6 +6470,26 @@ void compare_feature_struct(VkStructureType sType, std::vector<std::string> & er
 #if (defined(VK_EXT_shader_uniform_buffer_unsized_array))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT):
             compare_VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT*>(requested));
+            break;
+#endif
+#if (defined(VK_NV_compute_occupancy_priority))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV):
+            compare_VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV(error_list, *reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*>(supported), *reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*>(requested));
+            break;
+#endif
+#if (defined(VK_EXT_shader_subgroup_partitioned))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT):
+            compare_VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(requested));
+            break;
+#endif
+#if (defined(VK_VALVE_shader_mixed_float_dot_product))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE):
+            compare_VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE(error_list, *reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(supported), *reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(requested));
+            break;
+#endif
+#if (defined(VK_EXT_primitive_restart_index))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT):
+            compare_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT(error_list, *reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(supported), *reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(requested));
             break;
 #endif
 #if (defined(VK_KHR_acceleration_structure))
@@ -6656,6 +6992,16 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceFragmentShadingRateFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR*>(merge_in));
             break;
 #endif
+#if (defined(VK_KHR_shader_constant_data))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR):
+            merge_VkPhysicalDeviceShaderConstantDataFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(merge_in));
+            break;
+#endif
+#if (defined(VK_KHR_shader_abort))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR):
+            merge_VkPhysicalDeviceShaderAbortFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceShaderAbortFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR*>(merge_in));
+            break;
+#endif
 #if (defined(VK_KHR_shader_quad_control))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR):
             merge_VkPhysicalDeviceShaderQuadControlFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(merge_in));
@@ -6674,6 +7020,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
 #if (defined(VK_KHR_present_id))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR):
             merge_VkPhysicalDevicePresentIdFeaturesKHR(*reinterpret_cast<VkPhysicalDevicePresentIdFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDevicePresentIdFeaturesKHR*>(merge_in));
+            break;
+#endif
+#if (defined(VK_KHR_device_address_commands))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR):
+            merge_VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*>(merge_in));
             break;
 #endif
 #if (defined(VK_KHR_fragment_shader_barycentric))
@@ -6739,6 +7090,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT(*reinterpret_cast<VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT*>(merge_in));
             break;
 #endif
+#if (defined(VK_KHR_internally_synchronized_queues))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR):
+            merge_VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*>(merge_in));
+            break;
+#endif
 #if (defined(VK_KHR_cooperative_matrix))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR):
             merge_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(merge_in));
@@ -6796,6 +7152,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
 #if (defined(VK_KHR_maintenance7))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR):
             merge_VkPhysicalDeviceMaintenance7FeaturesKHR(*reinterpret_cast<VkPhysicalDeviceMaintenance7FeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR*>(merge_in));
+            break;
+#endif
+#if (defined(VK_KHR_device_fault))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR):
+            merge_VkPhysicalDeviceFaultFeaturesKHR(*reinterpret_cast<VkPhysicalDeviceFaultFeaturesKHR*>(current), *reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR*>(merge_in));
             break;
 #endif
 #if (defined(VK_KHR_maintenance8))
@@ -6885,6 +7246,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(*reinterpret_cast<VkPhysicalDeviceShaderEnqueueFeaturesAMDX*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX*>(merge_in));
             break;
 #endif
+#if (defined(VK_EXT_descriptor_heap))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT):
+            merge_VkPhysicalDeviceDescriptorHeapFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(merge_in));
+            break;
+#endif
 #if (defined(VK_EXT_blend_operation_advanced))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT):
             merge_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT*>(merge_in));
@@ -6905,6 +7271,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(*reinterpret_cast<VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*>(merge_in));
             break;
 #endif
+#if (defined(VK_QCOM_cooperative_matrix_conversion))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM):
+            merge_VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM(*reinterpret_cast<VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(current), *reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(merge_in));
+            break;
+#endif
 #if (defined(VK_NV_mesh_shader))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV):
             merge_VkPhysicalDeviceMeshShaderFeaturesNV(*reinterpret_cast<VkPhysicalDeviceMeshShaderFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV*>(merge_in));
@@ -6918,6 +7289,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
 #if (defined(VK_NV_scissor_exclusive))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV):
             merge_VkPhysicalDeviceExclusiveScissorFeaturesNV(*reinterpret_cast<VkPhysicalDeviceExclusiveScissorFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDeviceExclusiveScissorFeaturesNV*>(merge_in));
+            break;
+#endif
+#if (defined(VK_EXT_present_timing))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT):
+            merge_VkPhysicalDevicePresentTimingFeaturesEXT(*reinterpret_cast<VkPhysicalDevicePresentTimingFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT*>(merge_in));
             break;
 #endif
 #if (defined(VK_INTEL_shader_integer_functions2))
@@ -7034,6 +7410,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceCustomBorderColorFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceCustomBorderColorFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceCustomBorderColorFeaturesEXT*>(merge_in));
             break;
 #endif
+#if (defined(VK_EXT_texture_compression_astc_3d))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT):
+            merge_VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*>(merge_in));
+            break;
+#endif
 #if (defined(VK_NV_present_barrier))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV):
             merge_VkPhysicalDevicePresentBarrierFeaturesNV(*reinterpret_cast<VkPhysicalDevicePresentBarrierFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV*>(merge_in));
@@ -7042,6 +7423,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
 #if (defined(VK_NV_device_diagnostics_config))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV):
             merge_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(*reinterpret_cast<VkPhysicalDeviceDiagnosticsConfigFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDeviceDiagnosticsConfigFeaturesNV*>(merge_in));
+            break;
+#endif
+#if (defined(VK_QCOM_queue_perf_hint))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM):
+            merge_VkPhysicalDeviceQueuePerfHintFeaturesQCOM(*reinterpret_cast<VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(current), *reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(merge_in));
             break;
 #endif
 #if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_cuda_kernel_launch))
@@ -7535,6 +7921,16 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceImageAlignmentControlFeaturesMESA(*reinterpret_cast<VkPhysicalDeviceImageAlignmentControlFeaturesMESA*>(current), *reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA*>(merge_in));
             break;
 #endif
+#if (defined(VK_NV_push_constant_bank))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_FEATURES_NV):
+            merge_VkPhysicalDevicePushConstantBankFeaturesNV(*reinterpret_cast<VkPhysicalDevicePushConstantBankFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV*>(merge_in));
+            break;
+#endif
+#if (defined(VK_EXT_ray_tracing_invocation_reorder))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT):
+            merge_VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(merge_in));
+            break;
+#endif
 #if (defined(VK_EXT_depth_clamp_control))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT):
             merge_VkPhysicalDeviceDepthClampControlFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceDepthClampControlFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT*>(merge_in));
@@ -7560,6 +7956,11 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDevicePerformanceCountersByRegionFeaturesARM(*reinterpret_cast<VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*>(current), *reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*>(merge_in));
             break;
 #endif
+#if (defined(VK_ARM_shader_instrumentation))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM):
+            merge_VkPhysicalDeviceShaderInstrumentationFeaturesARM(*reinterpret_cast<VkPhysicalDeviceShaderInstrumentationFeaturesARM*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM*>(merge_in));
+            break;
+#endif
 #if (defined(VK_EXT_vertex_attribute_robustness))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT):
             merge_VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT*>(merge_in));
@@ -7575,7 +7976,7 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE(*reinterpret_cast<VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*>(current), *reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*>(merge_in));
             break;
 #endif
-#if defined(VK_ENABLE_BETA_EXTENSIONS) && (defined(VK_NV_present_metering))
+#if (VK_HEADER_VERSION >= 345 || defined(VK_ENABLE_BETA_EXTENSIONS)) && (defined(VK_NV_present_metering))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV):
             merge_VkPhysicalDevicePresentMeteringFeaturesNV(*reinterpret_cast<VkPhysicalDevicePresentMeteringFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(merge_in));
             break;
@@ -7590,9 +7991,24 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
             merge_VkPhysicalDeviceShader64BitIndexingFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(merge_in));
             break;
 #endif
+#if (defined(VK_EXT_custom_resolve))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT):
+            merge_VkPhysicalDeviceCustomResolveFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceCustomResolveFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT*>(merge_in));
+            break;
+#endif
 #if (defined(VK_QCOM_data_graph_model))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM):
             merge_VkPhysicalDeviceDataGraphModelFeaturesQCOM(*reinterpret_cast<VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(current), *reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(merge_in));
+            break;
+#endif
+#if (defined(VK_ARM_data_graph_optical_flow))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM):
+            merge_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(*reinterpret_cast<VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(current), *reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(merge_in));
+            break;
+#endif
+#if (defined(VK_EXT_shader_long_vector))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT):
+            merge_VkPhysicalDeviceShaderLongVectorFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(merge_in));
             break;
 #endif
 #if (defined(VK_SEC_pipeline_cache_incremental_mode))
@@ -7603,6 +8019,26 @@ void merge_feature_struct(VkStructureType sType, void* current, const void* merg
 #if (defined(VK_EXT_shader_uniform_buffer_unsized_array))
         case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT):
             merge_VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT*>(merge_in));
+            break;
+#endif
+#if (defined(VK_NV_compute_occupancy_priority))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV):
+            merge_VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV(*reinterpret_cast<VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*>(current), *reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*>(merge_in));
+            break;
+#endif
+#if (defined(VK_EXT_shader_subgroup_partitioned))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT):
+            merge_VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT(*reinterpret_cast<VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(merge_in));
+            break;
+#endif
+#if (defined(VK_VALVE_shader_mixed_float_dot_product))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE):
+            merge_VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE(*reinterpret_cast<VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(current), *reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(merge_in));
+            break;
+#endif
+#if (defined(VK_EXT_primitive_restart_index))
+        case(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT):
+            merge_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT(*reinterpret_cast<VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(current), *reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(merge_in));
             break;
 #endif
 #if (defined(VK_KHR_acceleration_structure))

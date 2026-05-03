@@ -31,7 +31,7 @@ public:
     FrameContext() = default;
     ~FrameContext() = default;
 
-    void init(VulkanContext* ctx);
+    void init(VulkanContext* ctx, DescriptorHeapAllocator* heap);
     void cleanup();
 
     VkFence& get_render_fence() { return m_render_fence; }
@@ -39,11 +39,15 @@ public:
     //VkSemaphore& get_render_semaphore() { return m_render_semaphore; }
 
     VkCommandBuffer get_cmd_buffer() { return m_cmd_buffer; }
-    const FGTextureHandle& get_swapchain_handle() { return m_swapchain_handle; }
-    void set_swapchain_handle(FGTextureHandle handle) { m_swapchain_handle = handle; }
+    TextureResource* get_swapchain() { return m_swapchain; }
+    void set_swapchain(TextureResource* ptr) { m_swapchain = ptr; }
     
     DescriptorAllocator& get_descriptor_allocator() {
         return m_descriptor_allocator;
+    }
+
+    DescriptorHeapAllocator* get_descriptor_heap() {
+        return m_descriptor_heap;
     }
     
     VkDevice get_device() const { return m_device; }
@@ -58,9 +62,10 @@ private:
 	VkSemaphore m_swapchain_semaphore;
 	VkFence m_render_fence;
     
-    FGTextureHandle m_swapchain_handle;
+    TextureResource* m_swapchain;
     
     DescriptorAllocator m_descriptor_allocator;
+    DescriptorHeapAllocator* m_descriptor_heap;
 
     DeletionQueue m_deletion_queue;
 };

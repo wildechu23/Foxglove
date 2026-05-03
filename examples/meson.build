@@ -11,6 +11,10 @@ testexe = executable('testexe',
 test_env = environment()
 test_env.set('TEST_SOURCE_DIR', meson.current_source_dir())
 
-test('foxglove test', testexe,
+test('foxglove test',
+  find_program('switcherooctl.sh'),
+  args: ['launch', '-g', '1', testexe.full_path()],
   env: test_env,
-  workdir: meson.current_build_dir())
+  workdir: meson.current_build_dir(),
+  depends: testexe
+)

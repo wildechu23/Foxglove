@@ -1,17 +1,13 @@
 #include "foxglove/renderer/renderer.h"
 
-Renderer::Renderer(Window& window)
-    : m_window(window) {
+Renderer::Renderer(Window& window, VulkanContext& ctx, ResourceManager& rm)
+    : m_window(window), m_ctx(ctx), m_rm(rm) {
     init();
 }
 
-Renderer::~Renderer() {
-    cleanup();
-}
+Renderer::~Renderer() {}
 
 void Renderer::init() {
-    m_ctx.init(m_window.get_window());
-
     m_swapchain.init(
         m_ctx.get_device(),
         m_ctx.get_physical_device(),
@@ -20,9 +16,8 @@ void Renderer::init() {
         m_window.get_height()
     );
 
-    m_fg.init(&m_ctx, &m_swapchain);
-    m_rm.init(&m_ctx);
-    m_um.init(&m_ctx, &m_rm);
+    m_fg.init(&m_ctx, &m_swapchain, &m_rm);
+    m_global_heap.init(&m_ctx, &m_rm);
 
     m_sl.init(m_ctx.get_device());
     m_pm.init(m_ctx.get_device());
@@ -37,7 +32,7 @@ void Renderer::init() {
     //m_frames = std::vector<FrameContext>(m_swapchain.get_image_count());
 
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
-        m_frames[i].init(&m_ctx);
+        m_frames[i].init(&m_ctx, &m_global_heap);
     }
 }
 
@@ -74,10 +69,7 @@ void Renderer::draw() {
     swap_ptr->image = m_swapchain.get_image(swapchain_image_idx);
     swap_ptr->view = m_swapchain.get_image_view(swapchain_image_idx);
     swap_ptr->extent = m_swapchain.get_extent();
-
-    FGTextureHandle swapchain_handle = m_fg.register_external_texture(
-            "swapchain", swapchain_image_desc, swap_ptr);
-    fctx.set_swapchain_handle(swapchain_handle);
+    fctx.set_swapchain(swap_ptr);
     
 	VkCommandBuffer cmd = fctx.get_cmd_buffer();
     vkResetCommandBuffer(cmd, 0);
@@ -152,19 +144,14 @@ void Renderer::draw() {
 }
 
 void Renderer::cleanup() {
-    vkDeviceWaitIdle(m_ctx.get_device());
-
     for(uint32_t i = 0; i < FRAME_OVERLAP; i++) {
         m_frames[i].cleanup();
     }
     
     m_fg.reset();
     
-    m_um.cleanup();
-    m_rm.cleanup();
     m_pm.cleanup();
     m_sl.cleanup();
     
     m_swapchain.cleanup();
-    m_ctx.cleanup();
 }

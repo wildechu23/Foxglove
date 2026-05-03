@@ -3,19 +3,21 @@
 #include <iostream>
 #include <cstring>
 
-void UploadManager::init(VulkanContext* ctx, ResourceManager* rm)  {
-    m_rm = rm;
+UploadManager::UploadManager(VulkanContext& ctx, ResourceManager& rm)
+    : m_rm(rm) {
+    m_device = ctx.get_device();
+    m_allocator = ctx.get_allocator();
+    m_transfer_queue = ctx.get_transfer_queue();
+    m_transfer_queue_family = ctx.get_transfer_queue_family();
+}
 
-    m_device = ctx->get_device();
-    m_allocator = ctx->get_allocator();
-    m_transfer_queue = ctx->get_transfer_queue();
-
+void UploadManager::init()  {
     // init commands
     VkCommandPoolCreateInfo cmd_pool_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = ctx->get_transfer_queue_family()
+        .queueFamilyIndex = m_transfer_queue_family
     };
 
     vkCreateCommandPool(
@@ -60,7 +62,7 @@ UploadJobHandle UploadManager::upload_data(const void* data, size_t size,
         BufferHandle dst) {
     // TODO: GET THESE FROM POOLS
     // staging buffer
-    BufferHandle staging_handle = m_rm->create_buffer({
+    BufferHandle staging_handle = m_rm.create_buffer({
         .size = size,
         .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         .memory_usage = VMA_MEMORY_USAGE_CPU_ONLY,
@@ -68,7 +70,7 @@ UploadJobHandle UploadManager::upload_data(const void* data, size_t size,
     });
 
     // TODO: WRITE FUNCTION TO GET PTR
-    BufferResource* staging = m_rm->get_buffer(staging_handle);
+    BufferResource* staging = m_rm.get_buffer(staging_handle);
     memcpy(staging->mapped_data, data, size);
 
     UploadJobHandle handle(m_next_handle_id++, 0);
@@ -100,8 +102,8 @@ void UploadManager::submit_batch() {
             .size = upload.size
         };
         
-        BufferResource* src = m_rm->get_buffer(upload.src);
-        BufferResource* dst = m_rm->get_buffer(upload.dst);
+        BufferResource* src = m_rm.get_buffer(upload.src);
+        BufferResource* dst = m_rm.get_buffer(upload.dst);
         
         /*
         std::cout << "src: " << src << std::endl;
@@ -158,7 +160,7 @@ void UploadManager::process_completions() {
     auto itr = m_in_flight.begin();
     while(itr != m_in_flight.end()) {
         if(itr->second.batch_id <= last_completed) {
-            m_rm->destroy_buffer(itr->second.staging);
+            m_rm.destroy_buffer(itr->second.staging);
 
             itr = m_in_flight.erase(itr);
         } else {

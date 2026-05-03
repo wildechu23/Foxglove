@@ -334,6 +334,24 @@ template <typename T, typename F, typename... Ts> auto get_vector_noerror(F&& f,
 }
 } // namespace detail
 
+const char* to_string_device_type(const VkPhysicalDeviceType type) {
+    switch (type) {
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+            return "other";
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            return "integrated";
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            return "discrete";
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            return "virtual_gpu";
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
+            return "cpu";
+        default:
+            return "unknown";
+    }
+}
+
+
 const char* to_string_message_severity(VkDebugUtilsMessageSeverityFlagBitsEXT s) {
     switch (s) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
@@ -403,13 +421,14 @@ bool check_layer_supported(std::vector<VkLayerProperties> const& available_layer
     return false;
 }
 
-bool check_layers_supported(std::vector<VkLayerProperties> const& available_layers, std::vector<const char*> const& layer_names) {
-    bool all_found = true;
+std::vector<std::string> check_layers_supported(
+    std::vector<VkLayerProperties> const& available_layers, std::vector<const char*> const& layer_names) {
+    std::vector<std::string> not_found;
     for (const auto& layer_name : layer_names) {
         bool found = check_layer_supported(available_layers, layer_name);
-        if (!found) all_found = false;
+        if (!found) not_found.push_back(layer_name);
     }
-    return all_found;
+    return not_found;
 }
 
 bool check_extension_supported(std::vector<VkExtensionProperties> const& available_extensions, const char* extension_name) {
@@ -422,14 +441,14 @@ bool check_extension_supported(std::vector<VkExtensionProperties> const& availab
     return false;
 }
 
-bool check_extensions_supported(
+std::vector<std::string> check_extensions_supported(
     std::vector<VkExtensionProperties> const& available_extensions, std::vector<const char*> const& extension_names) {
-    bool all_found = true;
+    std::vector<std::string> not_found;
     for (const auto& extension_name : extension_names) {
         bool found = check_extension_supported(available_extensions, extension_name);
-        if (!found) all_found = false;
+        if (!found) not_found.push_back(extension_name);
     }
-    return all_found;
+    return not_found;
 }
 
 template <typename T> void setup_pNext_chain(T& structure, std::vector<void*> const& structs) {
@@ -772,9 +791,9 @@ Result<Instance> InstanceBuilder::build() const {
         if (!khr_surface_added || !added_window_exts)
             return make_error_code(InstanceError::windowing_extensions_not_present);
     }
-    bool all_extensions_supported = detail::check_extensions_supported(system.available_extensions, extensions);
-    if (!all_extensions_supported) {
-        return make_error_code(InstanceError::requested_extensions_not_present);
+    std::vector<std::string> unsupported_extensions = detail::check_extensions_supported(system.available_extensions, extensions);
+    if (!unsupported_extensions.empty()) {
+        return { make_error_code(InstanceError::requested_extensions_not_present), unsupported_extensions };
     }
 
     for (auto& layer : info.layers)
@@ -783,9 +802,9 @@ Result<Instance> InstanceBuilder::build() const {
     if (info.enable_validation_layers || (info.request_validation_layers && system.validation_layers_available)) {
         layers.push_back(detail::validation_layer_name);
     }
-    bool all_layers_supported = detail::check_layers_supported(system.available_layers, layers);
-    if (!all_layers_supported) {
-        return make_error_code(InstanceError::requested_layers_not_present);
+    std::vector<std::string> unsupported_layers = detail::check_layers_supported(system.available_layers, layers);
+    if (!unsupported_layers.empty()) {
+        return { make_error_code(InstanceError::requested_layers_not_present), unsupported_layers };
     }
 
     std::vector<void*> pNext_chain;
@@ -1213,6 +1232,9 @@ PhysicalDevice::Suitable PhysicalDeviceSelector::is_device_suitable(
             suitable = PhysicalDevice::Suitable::partial;
         } else {
             suitable = PhysicalDevice::Suitable::no;
+            unsuitability_reasons.push_back(
+                std::string("VkPhysicalDeviceType \"") + to_string_device_type(pd.properties.deviceType) + "\" does not match preferred type \"" +
+                to_string_device_type(static_cast<VkPhysicalDeviceType>(criteria.preferred_type)) + "\"");
         }
     }
 
@@ -1546,11 +1568,17 @@ Result<uint32_t> Device::get_queue_index(QueueType type) const {
             break;
         case QueueType::compute:
             index = detail::get_separate_queue_index(queue_families, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT);
-            if (index == detail::QUEUE_INDEX_MAX_VALUE) return Result<uint32_t>{ QueueError::compute_unavailable };
+            if (index == detail::QUEUE_INDEX_MAX_VALUE) {
+                index = detail::get_first_queue_index(queue_families, VK_QUEUE_COMPUTE_BIT);
+                if (index == detail::QUEUE_INDEX_MAX_VALUE) return Result<uint32_t>{ QueueError::compute_unavailable };
+            }
             break;
         case QueueType::transfer:
             index = detail::get_separate_queue_index(queue_families, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT);
-            if (index == detail::QUEUE_INDEX_MAX_VALUE) return Result<uint32_t>{ QueueError::transfer_unavailable };
+            if (index == detail::QUEUE_INDEX_MAX_VALUE) {
+                index = detail::get_first_queue_index(queue_families, VK_QUEUE_TRANSFER_BIT);
+                if (index == detail::QUEUE_INDEX_MAX_VALUE) return Result<uint32_t>{ QueueError::transfer_unavailable };
+            }
             break;
         default:
             return Result<uint32_t>{ QueueError::invalid_queue_family_index };
@@ -1587,6 +1615,22 @@ Result<VkQueue> Device::get_dedicated_queue(QueueType type) const {
     VkQueue out_queue;
     internal_table.fp_vkGetDeviceQueue(device, index.value(), 0, &out_queue);
     return out_queue;
+}
+
+Result<std::pair<VkQueue, uint32_t>> Device::get_queue_and_index(QueueType type) const {
+    auto index = get_queue_index(type);
+    if (!index.has_value()) return { index.error() };
+    VkQueue out_queue;
+    internal_table.fp_vkGetDeviceQueue(device, index.value(), 0, &out_queue);
+    return std::pair<VkQueue, uint32_t>(out_queue, index.value());
+}
+
+Result<std::pair<VkQueue, uint32_t>> Device::get_dedicated_queue_and_index(QueueType type) const {
+    auto index = get_dedicated_queue_index(type);
+    if (!index.has_value()) return { index.error() };
+    VkQueue out_queue;
+    internal_table.fp_vkGetDeviceQueue(device, index.value(), 0, &out_queue);
+    return std::pair<VkQueue, uint32_t>(out_queue, index.value());
 }
 
 // ---- Dispatch ---- //
@@ -1853,8 +1897,8 @@ SwapchainBuilder::SwapchainBuilder(Device const& device) {
     auto present = device.get_queue_index(QueueType::present);
     auto graphics = device.get_queue_index(QueueType::graphics);
     assert(graphics.has_value() && present.has_value() && "Graphics and Present queue indexes must be valid");
-    info.graphics_queue_index = present.value();
-    info.present_queue_index = graphics.value();
+    info.graphics_queue_index = graphics.value();
+    info.present_queue_index = present.value();
 }
 SwapchainBuilder::SwapchainBuilder(Device const& device, VkSurfaceKHR const surface) {
     info.physical_device = device.physical_device.physical_device;

@@ -6,10 +6,10 @@
 // MAKE THIS FOR PERMANENT RESOURCES
 class ResourceManager {
 public:
-    ResourceManager() = default;
+    ResourceManager(VulkanContext& ctx);
     ~ResourceManager() = default;
     
-    void init(VulkanContext* ctx);
+    void init();
     void cleanup();
 
     BufferHandle create_buffer(const BufferDesc& desc);
@@ -23,10 +23,14 @@ public:
     void destroy_buffer(BufferHandle handle);
     void destroy_texture(TextureHandle handle);
 private:
+    VkDeviceAddress _get_buffer_address(BufferResource* resource);
+
     VkDevice m_device;
     VmaAllocator m_allocator;
 
     BufferPool m_buffers;
     TexturePool m_textures;
+
+    friend class DescriptorHeapAllocator;
 };
 

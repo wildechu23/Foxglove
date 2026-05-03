@@ -6,9 +6,11 @@
 // FrameGraph
 //
 
-void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
+void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain,
+        ResourceManager* rm) {
     m_ctx = ctx;
     m_swapchain = swapchain;
+    m_rm = rm;
 	
     /*
     //create a descriptor pool that will hold 10 sets with 1 image each
@@ -20,6 +22,7 @@ void FrameGraph::init(VulkanContext* ctx, Swapchain* swapchain) {
 	
     m_desc_allocator.init_pool(m_ctx->get_device(), 10, sizes);
     */
+
 }
 
 FGBufferHandle FrameGraph::create_buffer(const std::string& name,
@@ -33,13 +36,17 @@ FGTextureHandle FrameGraph::create_texture(const std::string& name,
 }
 
 FGBufferHandle FrameGraph::register_external_buffer(const std::string& name,
-        BufferResource* resource) {
-    return m_buffers.create(name, resource);
+        BufferHandle resource) {
+    FGBufferHandle handle = m_buffers.create(name, resource);
+    m_external_buffers.push_back(handle);
+    return handle;
 }
 
 FGTextureHandle FrameGraph::register_external_texture(const std::string& name,
-        TextureDesc desc, TextureResource* resource) {
-    return m_textures.create(name, desc, resource);
+        TextureDesc desc, TextureHandle resource) {
+    FGTextureHandle handle = m_textures.create(name, desc, resource);
+    m_external_textures.push_back(handle);
+    return handle;
 }
 
 FGBuffer* FrameGraph::get_buffer(FGBufferHandle handle) {
@@ -202,7 +209,6 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
         
-        // for(const BufferBinding& b : pass->get_buffers()) {
         pass->enumerate_buffers([this, &transient_buffers]
         (const BufferBinding& b) {
             FGBuffer* buffer = get_buffer(b.handle);
@@ -212,7 +218,6 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
             }
         });
 
-        //for(const TextureBinding& t: pass->get_textures()) {
         pass->enumerate_textures([this, &transient_textures]
         (const TextureBinding& t) {
             FGTexture* texture = get_texture(t.handle); 
@@ -224,44 +229,46 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
     }
 
     // then allocate
+    // TODO: ALLOCATE FROM TRANSIENT POOL
     for(FGBuffer* buffer : transient_buffers) {
         // consider pooling + caching
-        BufferResource* resource = new BufferResource(
-                m_ctx->get_device(),
-                m_ctx->get_allocator(),
-                buffer->get_desc());
+        BufferHandle resource = m_rm->create_buffer(buffer->get_desc());
         buffer->set_resource(resource);
+        buffer->set_resource_ptr(m_rm->get_buffer(resource));
 
         fctx.get_deletion_queue().push_function([&, resource]() {
-            resource->destroy(
-                m_ctx->get_allocator()
-            );
-            delete resource;
+            m_rm->destroy_buffer(resource);
         });
     }
 
     for(FGTexture* texture : transient_textures) {
-        TextureResource* resource = new TextureResource(
-                m_ctx->get_device(),
-                m_ctx->get_allocator(),
-                texture->get_desc());
+        TextureHandle resource = m_rm->create_texture(texture->get_desc());
         texture->set_resource(resource);
 
         fctx.get_deletion_queue().push_function([&, resource]() {
-            resource->destroy(
-                m_ctx->get_device(), 
-                m_ctx->get_allocator()
-            );
-            delete resource;
+            m_rm->destroy_texture(resource);
         });
     }
-}
 
-void add_buffer_barrier(const BufferBinding& bb, Pass* pass) {
+    // can set pointers now
+    for(FGBuffer* buffer : transient_buffers) {
+        buffer->set_resource_ptr(m_rm->get_buffer(buffer->get_resource()));
+    }
 
-}
+    for(FGTexture* texture : transient_textures) {
+        texture->set_resource_ptr(m_rm->get_texture(texture->get_resource()));
+    }
+    
+    // TODO: HOW TO CULL EXTERNAL RESOURCES PROPERLY?
+    for(FGBufferHandle handle : m_external_buffers) {
+        FGBuffer* buffer = get_buffer(handle);
+        buffer->set_resource_ptr(m_rm->get_buffer(buffer->get_resource()));
+    }
 
-void add_texture_barrier(const TextureBinding& tb, Pass* pass) {
+    for(FGTextureHandle handle : m_external_textures) {
+        FGTexture* texture = get_texture(handle);
+        texture->set_resource_ptr(m_rm->get_texture(texture->get_resource()));
+    }
 }
 
 void FrameGraph::collect_pass_barriers() {
@@ -317,7 +324,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
 
         for(BufferTransitionInfo bti : pass->get_buffer_transitions()) {
             FGBuffer* buffer = get_buffer(bti.handle);
-            BufferResource* br = buffer->get_resource();
+            BufferResource* br = buffer->get_resource_ptr();
   
             VkPipelineStageFlags2 src_stage = util::deduce_pipeline_flags(
                     bti.src_usage);
@@ -347,8 +354,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
         
         for(TextureTransitionInfo tti : pass->get_texture_transitions()) {
             FGTexture* texture = get_texture(tti.handle);
-            TextureResource* tr = texture->get_resource();
-
+            TextureResource* tr = texture->get_resource_ptr();
 
             VkPipelineStageFlags2 src_stage = util::deduce_pipeline_flags(
                     tti.src_usage);
@@ -398,9 +404,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
         // ONLY FOR PRESENT PASS
         // convert swapchain image to TransferDst
         if(pass->get_type() == PassType::Present) {
-            FGTextureHandle handle = fctx.get_swapchain_handle();
-            FGTexture* texture = get_texture(handle);
-            TextureResource* tr = texture->get_resource();
+            TextureResource* tr = fctx.get_swapchain();
 
             VkImageMemoryBarrier2 img_b = {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -421,8 +425,8 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
                     .levelCount = VK_REMAINING_MIP_LEVELS,
                     .baseArrayLayer = 0,
                     .layerCount = VK_REMAINING_ARRAY_LAYERS
-                    }
-    };
+                }
+            };
 
             pass->add_vk_image_barrier(img_b);
         }
@@ -448,7 +452,7 @@ VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
     const GraphicsPassInfo& info = pass->get_info();
     for(const ColorAttachment& ca : info.color_attachments) {
         FGTexture* fg_texture = get_texture(ca.handle);
-        TextureResource* texture = fg_texture->get_resource();
+        TextureResource* texture = fg_texture->get_resource_ptr();
         
         VkClearColorValue clear;
         if(ca.clear_value.has_value()) {
@@ -470,7 +474,7 @@ VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
     if (info.depth_attachment.has_value()) {
         const DepthAttachment& da = info.depth_attachment.value();
         TextureResource* depth_texture = get_texture(da.handle)
-            ->get_resource();
+            ->get_resource_ptr();
 
         VkImageLayout layout = info.is_combined() 
             ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
@@ -497,7 +501,7 @@ VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
     if (info.stencil_attachment.has_value()) {
         const StencilAttachment& sa = info.stencil_attachment.value();
         TextureResource* stencil_texture = get_texture(sa.handle)
-            ->get_resource();
+            ->get_resource_ptr();
         
         VkImageLayout layout = info.is_combined() 
             ? VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL
@@ -543,7 +547,7 @@ void FrameGraph::execute(FrameContext& fctx) {
 
     // steps that use the underlying resources
     allocate_resources(fctx);
-    
+
     collect_pass_barriers();
     compile_pass_barriers(fctx);
 
@@ -553,6 +557,7 @@ void FrameGraph::execute(FrameContext& fctx) {
             pass->get_vk_buffer_barriers();
         std::vector<VkImageMemoryBarrier2>& image_barriers = 
             pass->get_vk_image_barriers();
+
 
         if(!buffer_barriers.empty() || !image_barriers.empty()) {
             VkDependencyInfo dep_info = {
@@ -591,5 +596,8 @@ void FrameGraph::reset() {
     m_buffers.reset();
     m_textures.reset();
     m_passes.clear();
+
+    m_external_buffers.clear();
+    m_external_textures.clear();
 }
 

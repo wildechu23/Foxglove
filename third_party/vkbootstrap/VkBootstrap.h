@@ -37,6 +37,7 @@
 #include <string>
 #include <system_error>
 #include <variant>
+#include <utility>
 
 #include <vulkan/vulkan_core.h>
 
@@ -587,7 +588,6 @@ struct PhysicalDevice {
 
 enum class PreferredDeviceType { other = 0, integrated = 1, discrete = 2, virtual_gpu = 3, cpu = 4 };
 
-
 // Enumerates the physical devices on the system, and based on the added criteria, returns a physical device or list of
 // physical devies A device is considered suitable if it meets all the 'required' criteria.
 class PhysicalDeviceSelector {
@@ -760,6 +760,10 @@ struct Device {
     Result<VkQueue> get_queue(QueueType type) const;
     // Only a compute or transfer queue type is valid. All other queue types do not support a 'dedicated' queue
     Result<VkQueue> get_dedicated_queue(QueueType type) const;
+
+    Result<std::pair<VkQueue, uint32_t>> get_queue_and_index(QueueType type) const;
+    // Only a compute or transfer queue type is valid. All other queue types do not support a 'dedicated' queue
+    Result<std::pair<VkQueue, uint32_t>> get_dedicated_queue_and_index(QueueType type) const;
 
     // Return a loaded dispatch table
     DispatchTable make_table() const;

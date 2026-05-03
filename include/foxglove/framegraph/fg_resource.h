@@ -81,28 +81,31 @@ protected:
     Pass* m_last_writer;
 };
 
-// TODO: ADD NAMES
 class FGBuffer : public FGResource {
 public:
     FGBuffer(const std::string& name, BufferDesc desc) : 
         FGResource(name, ResourceType::Buffer), m_desc(desc) {}
-    FGBuffer(const std::string& name, BufferResource* resource) : 
+    FGBuffer(const std::string& name, BufferHandle resource) : 
         FGResource(name, ResourceType::Buffer, false), 
-        m_resource(resource) {}
+        m_resource_handle(resource) {}
     
     BufferDesc get_desc() const { return m_desc; }
     FGBufferHandle get_handle() const { return m_handle; }
     BufferUsage get_usage() const { return m_usage; }
-    BufferResource* get_resource() const { return m_resource; }
+        
+    BufferHandle    get_resource() const { return m_resource_handle; }
+    BufferResource* get_resource_ptr() const { return m_resource_ptr; }
     
     void set_usage(BufferUsage bu) { m_usage = bu; }
-    void set_resource(BufferResource* r) { m_resource = r; }
+    void set_resource(BufferHandle r) { m_resource_handle = r; }
+    void set_resource_ptr(BufferResource* r) { m_resource_ptr = r; }
 private:
     BufferDesc m_desc;
     FGBufferHandle m_handle;
     BufferUsage m_usage;
-    
-    BufferResource* m_resource;
+   
+    BufferHandle    m_resource_handle;
+    BufferResource* m_resource_ptr; // ONLY USE IF VALID
 
     friend FGBufferRegistry;
 };
@@ -111,18 +114,21 @@ class FGTexture : public FGResource {
 public:
     FGTexture(const std::string& name, TextureDesc desc) : 
         FGResource(name, ResourceType::Texture), m_desc(desc) {}
-    FGTexture(const std::string& name, TextureDesc desc, TextureResource* resource) : 
-        FGResource(name, ResourceType::Texture, false), 
-        m_desc(desc), m_resource(resource) {}
+    FGTexture(const std::string& name, TextureDesc desc, TextureHandle resource) 
+        : FGResource(name, ResourceType::Texture, false), 
+        m_desc(desc), m_resource_handle(resource) {}
 
 
     TextureDesc get_desc() const { return m_desc; }
     FGTextureHandle get_handle() const { return m_handle; }
     TextureUsage get_usage() const { return m_usage; }
-    TextureResource* get_resource() const { return m_resource; }
+
+    TextureHandle    get_resource() const { return m_resource_handle; }
+    TextureResource* get_resource_ptr() const { return m_resource_ptr; }
 
     void set_usage(TextureUsage tu) { m_usage = tu; }
-    void set_resource(TextureResource* r) { m_resource = r; }
+    void set_resource(TextureHandle r) { m_resource_handle = r; }
+    void set_resource_ptr(TextureResource* r) { m_resource_ptr = r; }
 private:
     TextureDesc m_desc;
     
@@ -130,7 +136,8 @@ private:
     FGTextureHandle m_handle;
     TextureUsage m_usage;
 
-    TextureResource* m_resource;
+    TextureHandle    m_resource_handle;
+    TextureResource* m_resource_ptr; // ONLY USE IF VALID
 
     friend FGTextureRegistry;
 };

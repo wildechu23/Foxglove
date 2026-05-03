@@ -8,10 +8,8 @@ PassContext::PassContext(FrameGraph* fg, FrameContext* fctx,
     // fg stuff
     m_device = fctx->get_device();
     m_cmd = fctx->get_cmd_buffer(); 
-}
 
-FGTextureHandle PassContext::get_swapchain_handle() const {
-    return m_fctx->get_swapchain_handle(); 
+	vkCmdPushDataEXT = reinterpret_cast<PFN_vkCmdPushDataEXT>(vkGetDeviceProcAddr(m_device, "vkCmdPushDataEXT"));
 }
 
 void PassContext::bind_compute_pipeline(ComputePipeline* pipeline) {
@@ -72,7 +70,7 @@ void PassContext::update_descriptor_sets(Pipeline* pipeline,
        
         for(const BufferBinding& bb : g.buffers) {
             FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
-            BufferResource* buffer = fg_buffer->get_resource();
+            BufferResource* buffer = fg_buffer->get_resource_ptr();
 
             VkDescriptorBufferInfo buffer_info = {
                 .buffer = buffer->buffer, 
@@ -95,7 +93,7 @@ void PassContext::update_descriptor_sets(Pipeline* pipeline,
 
         for(const TextureBinding& tb : g.textures) {
             FGTexture* fg_texture = m_fg->get_texture(tb.handle);
-            TextureResource* texture = fg_texture->get_resource();
+            TextureResource* texture = fg_texture->get_resource_ptr();
 
             // sampler goes here too
             VkDescriptorImageInfo image_info = {
@@ -129,5 +127,72 @@ void PassContext::update_descriptor_sets(Pipeline* pipeline,
     m_fctx->get_deletion_queue().push_function([desc_allocator, device](){ 
         desc_allocator->clear_descriptors(device);
     });
+}
+
+void PassContext::update_descriptor_heap(Pipeline* pipeline,
+        VkPipelineBindPoint bind_point) {
+    // TODO: THIS SHOULD GO EARLIER
+    const std::vector<BindingGroup>& bind_groups = m_pass->get_bind_groups();
+
+    if(bind_groups.empty()) return;
+    
+    DescriptorHeapAllocator& heap = *m_fctx->get_descriptor_heap();
+    
+    std::vector<BufferDescriptorInfo> buffers;
+    std::vector<TextureDescriptorInfo> textures;
+
+    // IF WE'RE USING HEAP, BIND ALL DESCRIPTORS TO SET 0, USE BINDING NUM
+    const BindingGroup& g = bind_groups[0];
+    size_t total_bindings = g.buffers.size() + g.textures.size();
+
+    for(const BufferBinding& bb : g.buffers) {
+        FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
+        if(!heap.has_resource(fg_buffer->get_resource())) {
+            buffers.push_back({
+                fg_buffer->get_resource(),
+                bb.usage
+            });
+        }
+    }
+
+    for(const TextureBinding& tb : g.textures) {
+        FGTexture* fg_texture = m_fg->get_texture(tb.handle);
+        if(!heap.has_resource(fg_texture->get_resource())) {
+            textures.push_back({
+                fg_texture->get_resource(),
+                tb.usage
+            });
+        }
+    }
+
+    heap.add_descriptors(buffers, textures);
+    heap.write_pending(m_device);
+
+    // now write into data the size of total_bindings * uint32_t
+    std::vector<uint32_t> push_data(total_bindings);
+    
+    for(const BufferBinding& bb : g.buffers) {
+        BufferHandle handle = m_fg->get_buffer(bb.handle)->get_resource();
+        push_data[bb.binding] = heap.get_index(handle);
+    }
+
+    for(const TextureBinding& tb : g.textures) {
+        TextureHandle handle = m_fg->get_texture(tb.handle)->get_resource();
+        push_data[tb.binding] = heap.get_index(handle);
+    }
+
+
+    VkPushDataInfoEXT push_data_info = {
+        .sType = VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT,
+        .pNext = NULL,
+        .offset = 0,
+        .data = {
+            .address = push_data.data(),
+            .size = push_data.size()
+        }
+    };
+
+    vkCmdPushDataEXT(m_cmd, &push_data_info);
+    
 }
 

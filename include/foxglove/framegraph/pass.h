@@ -98,7 +98,9 @@ public:
 
     const PassType get_type() const { return m_type; }
 
-    const std::vector<BindingGroup>& get_bind_groups() const { return m_bind_groups; }
+    const std::vector<BindingGroup>& get_bind_groups() const {
+        return m_bind_groups;
+    }
     
 private:
     friend PassBuilder;

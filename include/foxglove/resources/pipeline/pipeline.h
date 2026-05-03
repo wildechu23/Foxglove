@@ -74,15 +74,10 @@ struct GraphicsPipelineConfig {
     VkFormat                                color_attachment_format;
 };
 
-// TODO: FINISH THESE FIELDS
+// TODO: ADD UNIQUE PIPELINE ATTRIBUTES LIKE SHADER 
 struct GraphicsPipelineDesc {
     // vectors exist for dynamic states
     std::vector<VkPipelineColorBlendAttachmentState>    m_color_blend_attachments;
-
-    // VkPipelineVertexInputStateCreateInfo
-    std::vector<VkVertexInputBindingDescription>        m_vertex_bindings;
-    std::vector<VkVertexInputAttributeDescription>      m_vertex_attributes;
-   
 
     VkPipelineMultisampleStateCreateInfo                m_multisampling;
 
@@ -108,12 +103,6 @@ struct GraphicsPipelineDesc {
         XXH3_64bits_update(&state, m_color_blend_attachments.data(),
                 m_color_blend_attachments.size() * 
                 sizeof(VkPipelineColorBlendAttachmentState));
-        XXH3_64bits_update(&state, m_vertex_bindings.data(),
-                m_vertex_bindings.size() * 
-                sizeof(VkVertexInputBindingDescription));
-        XXH3_64bits_update(&state, m_vertex_attributes.data(),
-                m_vertex_attributes.size() * 
-                sizeof(VkVertexInputAttributeDescription));
         XXH3_64bits_update(&state, m_color_attachment_formats.data(),
                 m_color_attachment_formats.size() * sizeof(VkFormat));
     

@@ -1,9 +1,11 @@
 #include "foxglove/resources/resource_manager.h"
 
-void ResourceManager::init(VulkanContext* ctx) {
-    m_device = ctx->get_device();
-    m_allocator = ctx->get_allocator();
+ResourceManager::ResourceManager(VulkanContext& ctx) {
+    m_device = ctx.get_device();
+    m_allocator = ctx.get_allocator();
 }
+
+void ResourceManager::init() {}
 
 void ResourceManager::cleanup() {
     m_buffers.cleanup(m_allocator);
@@ -28,12 +30,7 @@ TextureResource* ResourceManager::get_texture(TextureHandle handle) {
 
 VkDeviceAddress ResourceManager::get_buffer_address(BufferHandle handle) {
     BufferResource* resource = get_buffer(handle);
-
-    VkBufferDeviceAddressInfo device_address_info = { 
-		.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-		.buffer = resource->buffer
-	};
-    return vkGetBufferDeviceAddress(m_device, &device_address_info);
+    return _get_buffer_address(resource);
 }
 
 void ResourceManager::destroy_buffer(BufferHandle handle) {
@@ -44,3 +41,12 @@ void ResourceManager::destroy_texture(TextureHandle handle) {
     m_textures.destroy(handle, m_device, m_allocator);
 }
 
+
+
+VkDeviceAddress ResourceManager::_get_buffer_address(BufferResource* resource) {
+    VkBufferDeviceAddressInfo device_address_info = { 
+		.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+		.buffer = resource->buffer
+	};
+    return vkGetBufferDeviceAddress(m_device, &device_address_info);
+}

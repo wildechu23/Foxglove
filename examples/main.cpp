@@ -1,10 +1,6 @@
-#include "foxglove/window/window.h"
+#include "foxglove/core/engine.h"
 #include "foxglove/renderer/renderer.h"
-#include "foxglove/framegraph/framegraph.h"
 #include "foxglove/resources/loader.h"
-#include "foxglove/resources/upload_manager.h"
-#include "foxglove/core/camera.h"
-#include "foxglove/core/input_manager.h"
 
 
 namespace fs = std::filesystem;
@@ -12,23 +8,25 @@ namespace fs = std::filesystem;
 int main() {
     uint32_t width = 1280;
     uint32_t height = 720;
-    Window window(width, height, "Test Engine");
-    window.init();
-
-    InputManager input_manager(window);
-    Camera camera;
-    
     fs::path src_dir = std::getenv("TEST_SOURCE_DIR");
+    
+    EngineConfig eng_config;
+    eng_config.window = { width, height, "Test Engine" };
+    eng_config.enable_input = true;
+    eng_config.camera = { .fov = 80.f, .aspect_ratio = (float)width / height };
+    eng_config.graphics = { .enable_resources = true, .enable_upload = true };
 
-    Renderer renderer(window);
-    FrameGraph& fg = renderer.get_fg();
-    ShaderLibrary& sl = renderer.get_sl();
-    PipelineManager& pm = renderer.get_pm();
-    ResourceManager& rm = renderer.get_rm();
-    UploadManager& um = renderer.get_um();
+    Engine engine(eng_config);
+
+    ResourceManager* rm = engine.resources();
+    UploadManager* um = engine.upload_manager();
+    Renderer* renderer = engine.renderer();
+
+    ShaderLibrary& sl = renderer->get_sl();
+    PipelineManager& pm = renderer->get_pm();
 
     // load meshes
-    Loader loader(rm, um);
+    Loader loader(*rm, *um);
     std::vector<std::shared_ptr<MeshData>> mesh = 
         loader.load_gltf_meshes(src_dir/"assets/basicmesh.glb").value();
     MeshData& mesh0 = *mesh[2];
@@ -48,7 +46,7 @@ int main() {
     gcb.set_shaders({vert, frag, nullptr});
     gcb.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     gcb.set_polygon_mode(VK_POLYGON_MODE_FILL);
-    gcb.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    gcb.set_cull_mode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     gcb.set_multisampling_none();
     gcb.disable_blending();
     gcb.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
@@ -57,52 +55,33 @@ int main() {
 
     GraphicsPipelineConfig config = gcb.build();
     GraphicsPipeline* triangle = pm.get_graphics_pipeline(config);
-
-    VkImageUsageFlags draw_image_usages = VkImageUsageFlags(
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_STORAGE_BIT |
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    using clock = std::chrono::high_resolution_clock;
-    constexpr double max_update_dt = 0.1;
-    auto previous_time = clock::now();
     
-    while(!window.should_close()) {
-        auto current_time = clock::now();
-        std::chrono::duration<double> elapsed = current_time - previous_time;
-        previous_time = current_time;
-
-        double dt = elapsed.count();
-        if (dt > max_update_dt) dt = max_update_dt;
-
-        window.update();
-        input_manager.update();
-        camera.update(input_manager, dt);
-
-        um.process_completions();
+    FrameGraph& fg = renderer->get_fg();
+    while(!engine.window()->should_close()) {
+        engine.begin_frame();
+        glm::mat4 view = engine.camera()->get_view_matrix();
+        glm::mat4 projection = engine.camera()->get_projection_matrix();
 
         struct PushConstant {
             glm::mat4 world_matrix;
             VkDeviceAddress vertex_buffer;
         };
-        
-        glm::mat4 view = camera.get_view_matrix();
-        glm::mat4 projection = camera.get_projection_matrix();
-
         PushConstant pc = {
             .world_matrix = projection * view,
-            .vertex_buffer = rm.get_buffer_address(mesh0.vertex_buffer)
+            .vertex_buffer = rm->get_buffer_address(mesh0.vertex_buffer)
         };
 
         FGBufferHandle mesh_i = fg.register_external_buffer(
-                "mesh index buffer", rm.get_buffer(mesh0.index_buffer));
+                "mesh index buffer", mesh0.index_buffer);
 
         FGTextureHandle draw_image = fg.create_texture("draw image", 
             TextureDesc{
                 .extent = {width, height},
                 .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-                .usage = draw_image_usages,
+                .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                    | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+                    | VK_IMAGE_USAGE_STORAGE_BIT
+                    | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
             });
 
         FGTextureHandle depth_image = fg.create_texture("depth image", 
@@ -146,9 +125,7 @@ int main() {
             .present(draw_image)
             .build();
 
-        um.submit_batch();
-
-        renderer.draw();
+        engine.draw();
     }
 
 

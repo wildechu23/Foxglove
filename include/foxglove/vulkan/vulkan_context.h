@@ -4,12 +4,14 @@
 #include <GLFW/glfw3.h>
 #include "vk_mem_alloc.h"
 
+class Window;
+
 class VulkanContext {
 public:
     VulkanContext();
     ~VulkanContext();
 
-    void init(GLFWwindow* window);
+    void init(Window& window);
     void cleanup();
 
     VkInstance get_instance() const { return m_instance; }

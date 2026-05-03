@@ -11,7 +11,9 @@ using UploadJobHandle = TaggedHandle<JobType::Upload>;
 
 class UploadManager {
 public:
-    void init(VulkanContext* ctx, ResourceManager* rm);
+    UploadManager(VulkanContext& ctx, ResourceManager& rm);
+
+    void init();
     void cleanup();
 
     UploadJobHandle upload_data(const void* data, size_t size, 
@@ -34,7 +36,7 @@ private:
     //VkFence m_fence;
 
     VkQueue m_transfer_queue;
-    //uint32_t m_transfer_queue_family;
+    uint32_t m_transfer_queue_family;
     
     VkSemaphore m_timeline_semaphore;
 
@@ -57,5 +59,5 @@ private:
 
     uint64_t m_next_handle_id;
 
-    ResourceManager* m_rm;
+    ResourceManager& m_rm;
 };

@@ -23,9 +23,8 @@ GraphicsContext& GraphicsContext::bind_vertex_buffer(FGBufferHandle handle,
 
 GraphicsContext& GraphicsContext::bind_index_buffer(FGBufferHandle handle,
         VkDeviceSize offset) {
-    BufferResource* b = m_fg->get_buffer(handle)->get_resource();
-    vkCmdBindIndexBuffer(m_cmd, b->buffer, offset,
-            VK_INDEX_TYPE_UINT32);
+    BufferResource* b = m_fg->get_buffer(handle)->get_resource_ptr();
+    vkCmdBindIndexBuffer(m_cmd, b->buffer, offset, VK_INDEX_TYPE_UINT32);
     return *this;
 }
 

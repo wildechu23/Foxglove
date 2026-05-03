@@ -28,16 +28,16 @@ struct ResourceState {
 
 class FrameGraph {
 public:
-    void init(VulkanContext* ctx, Swapchain* swapchain);
+    void init(VulkanContext* ctx, Swapchain* swapchain, ResourceManager* rm);
     void reset();
 
     FGBufferHandle create_buffer(const std::string& name, BufferDesc desc);
     FGTextureHandle create_texture(const std::string& name, TextureDesc desc);
 
     FGBufferHandle register_external_buffer(const std::string& name,
-            BufferResource* resource);
+            BufferHandle resource);
     FGTextureHandle register_external_texture(const std::string& name,
-            TextureDesc desc, TextureResource* resource);
+            TextureDesc desc, TextureHandle resource);
 
     FGBuffer* get_buffer(FGBufferHandle handle);
     FGTexture* get_texture(FGTextureHandle handle);
@@ -62,8 +62,13 @@ private:
 
     std::vector<std::unique_ptr<Pass>> m_passes;
 
+    
     FGBufferRegistry m_buffers;
     FGTextureRegistry m_textures;
+    ResourceManager* m_rm;
+
+    std::vector<FGBufferHandle> m_external_buffers;
+    std::vector<FGTextureHandle> m_external_textures;
     
     //DescriptorAllocator m_desc_allocator;
 

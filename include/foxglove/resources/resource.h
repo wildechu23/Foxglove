@@ -5,6 +5,7 @@
 #include "foxglove/resources/desc.h"
 
 #include <string>
+#include <iostream>
 
 using BufferHandle = TaggedHandle<ResourceType::Buffer>;
 using TextureHandle = TaggedHandle<ResourceType::Texture>;
@@ -40,8 +41,12 @@ public:
         };        
 
         VmaAllocationInfo allocInfoDetail;
-        vmaCreateBuffer(allocator, &info, &allocInfo, 
+        VkResult result = vmaCreateBuffer(allocator, &info, &allocInfo, 
                        &buffer, &allocation, &allocInfoDetail);
+        if(result != VK_SUCCESS) {
+            std::cerr << "buffer creation failed" << std::endl;
+        }
+
     
         // assign member vars
         size = info.size;
@@ -68,9 +73,15 @@ public:
     }
 
     VkImage image;
-    VkImageView view;
+    VkImageView view = VK_NULL_HANDLE;
     VmaAllocation allocation;
+    
+    // desc
     VkExtent2D extent;
+    VkFormat format;
+    VkImageUsageFlags usage;
+    uint32_t mip_levels;
+    uint32_t array_layers;
     
     void create(VkDevice device, VmaAllocator allocator, 
                 const TextureDesc& desc) {
@@ -101,41 +112,50 @@ public:
                 &allocation,
                 nullptr);
 
+        extent = desc.extent;
+        format = desc.format;
+        usage = desc.usage;
+        mip_levels = desc.mip_levels;
+        array_layers = desc.array_layers;
+
+        if(desc.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT 
+                || desc.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            VkImageViewCreateInfo info = get_view_create_info();
+            vkCreateImageView(device, &info, nullptr, &view);
+        }
+    }
+    
+    void destroy(VkDevice device, VmaAllocator allocator) {
+        if(view != VK_NULL_HANDLE) {
+            vkDestroyImageView(device, view, nullptr);
+        }
+        vmaDestroyImage(allocator, image, allocation);
+    }
+
+    VkImageViewCreateInfo get_view_create_info() {
         VkImageSubresourceRange rview_srr = {
-            .aspectMask = get_aspect_mask(desc.usage, desc.format),
-            .levelCount = desc.mip_levels, 
-            .layerCount = desc.array_layers
+            .aspectMask = get_aspect_mask(usage, format),
+            .levelCount = mip_levels, 
+            .layerCount = array_layers
         };
 
 
-        VkImageViewType view_type = (desc.array_layers > 1) 
+        VkImageViewType view_type = (array_layers > 1) 
             ? VK_IMAGE_VIEW_TYPE_2D_ARRAY 
             : VK_IMAGE_VIEW_TYPE_2D;
 
 
-        VkImageViewCreateInfo rview_info = {
+        return VkImageViewCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = nullptr,
             .image = image,
             .viewType = view_type,
-            .format = desc.format,
+            .format = format,
             .subresourceRange = rview_srr
         };
-
-        vkCreateImageView(
-                device, 
-                &rview_info, 
-                nullptr, 
-                &view);
-
-        extent = desc.extent;
     }
-    
-    void destroy(VkDevice device, VmaAllocator allocator) {
-        // TODO: add check that its initialized
-        vkDestroyImageView(device, view, nullptr);
-        vmaDestroyImage(allocator, image, allocation);
-    }
+
+
 
     VkImageAspectFlags get_aspect_mask(VkImageUsageFlags usage,
             VkFormat format) {

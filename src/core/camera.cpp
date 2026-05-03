@@ -20,10 +20,10 @@ glm::mat4 Camera::get_rotation_matrix() {
 
 glm::mat4 Camera::get_projection_matrix() {
     glm::mat4 proj = glm::perspective(
-        glm::radians(70.0f),
-        1280.f / 720.f,
-        1000.f,
-        0.1f
+        glm::radians(m_fov),
+        m_aspect_ratio,
+        m_far_plane,
+        m_near_plane    // swap with glm force depth 0 to 1
     );
     proj[1][1] *= -1;  // Vulkan Y-flip
     return proj;

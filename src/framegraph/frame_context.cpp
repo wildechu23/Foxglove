@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-void FrameContext::init(VulkanContext* ctx) {
+void FrameContext::init(VulkanContext* ctx, DescriptorHeapAllocator* heap) {
     VkDevice device = ctx->get_device();
     
     // TODO: PROBABLY INITIALIZE MORE
@@ -57,6 +57,7 @@ void FrameContext::init(VulkanContext* ctx) {
     vkCreateSemaphore(device, &semaphore_create_info, nullptr, &m_swapchain_semaphore);
 
     m_device = device;
+    m_descriptor_heap = heap;
 }
 
 void FrameContext::cleanup() {
