@@ -51,11 +51,13 @@ public:
 
 private:
     VkDevice m_device;
-
+    
+    /*
     void create_descriptor_set_layouts(Pipeline* pipeline, 
             std::vector<DescriptorSetLayout>& layouts);
     void create_push_constant_ranges(Pipeline* pipeline, 
             std::vector<PushConstantInfo>& pc_infos);
+    */
 
     // graphics stuff
     void create_graphics_desc(GraphicsPipelineConfig& config,

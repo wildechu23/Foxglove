@@ -38,6 +38,8 @@ std::optional<std::vector<std::shared_ptr<MeshData>>> Loader::load_gltf_meshes(
 
     std::vector<std::shared_ptr<MeshData>> meshes;
 
+    std::vector<UploadJobHandle> jobs;
+
     std::vector<uint32_t> indices;
     std::vector<Vertex> vertices;
     for (fastgltf::Mesh& mesh : gltf.meshes) {
@@ -126,11 +128,13 @@ std::optional<std::vector<std::shared_ptr<MeshData>>> Loader::load_gltf_meshes(
                 }
             }
             
+            /*
             for(Vertex& vtx : vertices) {
                 std::cout << vtx.position.x <<
                     vtx.position.y <<
                     vtx.position.z << std::endl;
             }
+            */
 
             const size_t vbuffer_size = vertices.size() * sizeof(Vertex);
             const size_t ibuffer_size = indices.size() * sizeof(uint32_t);
@@ -151,20 +155,24 @@ std::optional<std::vector<std::shared_ptr<MeshData>>> Loader::load_gltf_meshes(
             });
 
             // TODO: BUFFER HANDLE?
-            UploadJobHandle j1 = m_um.upload_data(vertices.data(), vbuffer_size, 
-                    new_mesh.vertex_buffer);
-            UploadJobHandle j2 = m_um.upload_data(indices.data(), ibuffer_size, 
-                    new_mesh.index_buffer);
+            jobs.push_back(m_um.upload_data(vertices.data(), 
+                        vbuffer_size, new_mesh.vertex_buffer));
+            jobs.push_back(m_um.upload_data(indices.data(),
+                        ibuffer_size, new_mesh.index_buffer));
 
-            m_um.submit_batch();
-            m_um.wait_for_handle(j1);
-            m_um.wait_for_handle(j2);
-            std::cout << "jobs done" << std::endl;
-            m_um.process_completions();
 
             meshes.emplace_back(std::make_shared<MeshData>(
                         std::move(new_mesh)));
         }
     }
+    
+    m_um.submit_batch();
+    std::cout << "loader jobs done" << std::endl;
+    m_um.process_completions();
+    
+    for(UploadJobHandle job : jobs) {
+        m_um.wait_for_handle(job);
+    }
+
     return meshes;
 }

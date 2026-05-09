@@ -11,6 +11,7 @@ glslc = find_program(
 
 shader_sources = files([
     'gradient.comp',
+    'gradient_heap.comp',
     'colored_triangle.vert',
     'colored_triangle_mesh.vert',
     'colored_triangle.frag',
@@ -25,8 +26,8 @@ foreach shader : shader_sources
         input: shader,
         output: '@0@.spv'.format(name),
         command: [
-            glslc, '@INPUT@',
-            '-o', '@OUTPUT@'
+            glslc, '--target-env=vulkan1.3', 
+            '@INPUT@', '-o', '@OUTPUT@'
         ],
     )
     

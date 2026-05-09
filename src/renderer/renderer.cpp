@@ -57,13 +57,6 @@ void Renderer::draw() {
 
     VkSemaphore render_semaphore = m_swapchain.get_render_semaphore(
             swapchain_image_idx);
-    
-    // register swapchain image
-    TextureDesc swapchain_image_desc = {
-        .extent = m_swapchain.get_extent(),
-        .format = m_swapchain.get_format(),
-        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
-    };
 
     TextureResource* swap_ptr = new TextureResource;
     swap_ptr->image = m_swapchain.get_image(swapchain_image_idx);

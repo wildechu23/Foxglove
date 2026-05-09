@@ -15,6 +15,7 @@ PassBuilder::PassBuilder(FrameGraph* fg, const std::string& name, PassType type)
     m_layer_count = 1;
 }
 
+/*
 void PassBuilder::check_init(uint32_t set) {
     if(m_bind_groups.find(set) == m_bind_groups.end()) {
         m_bind_groups[set] = { 
@@ -24,8 +25,21 @@ void PassBuilder::check_init(uint32_t set) {
         };
     }
 }
+*/
 
-// TODO: ADD HANDLE 
+PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
+        BufferUsage usage, ResourceAccess access, uint32_t binding) {
+    m_bindings.buffers.push_back({ handle, usage, access, binding });
+    return *this;
+}
+
+PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
+        TextureUsage usage, ResourceAccess access, uint32_t binding) {
+    m_bindings.textures.push_back({ handle, usage, access, binding });
+    return *this;
+}
+
+/*
 PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
         BufferUsage usage, ResourceAccess access,
         uint32_t set, uint32_t binding) {
@@ -48,6 +62,7 @@ PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
 
     return *this;
 }
+*/
 
 PassBuilder& PassBuilder::bind_color_attachment(
         FGTextureHandle handle, 
@@ -97,8 +112,7 @@ PassBuilder& PassBuilder::present(FGTextureHandle handle) {
     bind_texture(
             handle, 
             TextureUsage::TransferSrc, 
-            ResourceAccess::Read,
-            0, 0 // 0, 0 here is useless consider fixing
+            ResourceAccess::Read, 0
     );
     
     // in m_execute_fn
@@ -135,8 +149,7 @@ PassBuilder& PassBuilder::clear_color(FGTextureHandle handle, Color color) {
     bind_texture(
             handle, 
             TextureUsage::StorageImage, 
-            ResourceAccess::Write,
-            0, 0 // 0, 0 here is useless consider fixing
+            ResourceAccess::Write, 0
     );
     
     execute([this, handle, color](PassContext ctx) {
@@ -166,9 +179,8 @@ PassBuilder& PassBuilder::execute(std::function<void(PassContext&)> execute_fn) 
 
 Pass* PassBuilder::build() {
     // validate
-    // TODO: VERIFY THE BELOW CONSTRUCT IS CORRECT
-    
-    // Note bindings are stored in user-declared order
+   
+    /*
     std::vector<BindingGroup> binding_groups;
     binding_groups.reserve(m_bind_groups.size());
     
@@ -176,10 +188,12 @@ Pass* PassBuilder::build() {
     for(const auto& [set, group] : m_bind_groups) {
         binding_groups.push_back(group);
     }
+    */
+
 
 
     PassDesc desc = PassDesc(m_name, m_type,
-                std::move(binding_groups),
+                std::move(m_bindings),
                 std::move(m_execute_fn));
 
     std::unique_ptr<Pass> pass;

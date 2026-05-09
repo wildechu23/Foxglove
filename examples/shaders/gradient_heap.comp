@@ -1,20 +1,23 @@
-//GLSL version to use
 #version 460
+
+#extension GL_EXT_descriptor_heap : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 //size of a workgroup for compute
 layout (local_size_x = 16, local_size_y = 16) in;
 
-//descriptor bindings for the pipeline
-layout(rgba16f,set = 0, binding = 0) uniform image2D image;
+layout(descriptor_heap, rgba16f) uniform image2D Textures[];
 
-void main() 
-{
+layout(push_constant) uniform PushConstants {
+    int image_index;
+} pc;
+
+#define IMAGE Textures[pc.image_index]
+
+void main() {    
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 size = imageSize(image);
+	ivec2 size = imageSize(IMAGE);
 
-    if(size.y == 1) {
-        imageStore(image, texelCoord, vec4(1.0, 0.0, 0.0, 1.0));
-    }
     if(texelCoord.x < size.x && texelCoord.y < size.y)
     {
         vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
@@ -25,6 +28,6 @@ void main()
             color.y = float(texelCoord.y)/(size.y);	
         }
     
-        imageStore(image, texelCoord, color);
+        imageStore(IMAGE, texelCoord, color);
     }
 }

@@ -121,7 +121,10 @@ public:
         if(desc.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT 
                 || desc.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             VkImageViewCreateInfo info = get_view_create_info();
-            vkCreateImageView(device, &info, nullptr, &view);
+            VkResult result = vkCreateImageView(device, &info, nullptr, &view);
+            if(result != VK_SUCCESS) {
+                std::cerr << "Failed to create image view" << std::endl;
+            }
         }
     }
     

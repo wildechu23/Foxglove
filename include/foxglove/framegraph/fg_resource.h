@@ -114,9 +114,9 @@ class FGTexture : public FGResource {
 public:
     FGTexture(const std::string& name, TextureDesc desc) : 
         FGResource(name, ResourceType::Texture), m_desc(desc) {}
-    FGTexture(const std::string& name, TextureDesc desc, TextureHandle resource) 
+    FGTexture(const std::string& name, TextureHandle resource) 
         : FGResource(name, ResourceType::Texture, false), 
-        m_desc(desc), m_resource_handle(resource) {}
+        m_resource_handle(resource) {}
 
 
     TextureDesc get_desc() const { return m_desc; }

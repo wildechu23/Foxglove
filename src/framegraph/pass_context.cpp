@@ -2,14 +2,13 @@
 
 #include "foxglove/framegraph/frame_context.h"
 #include "foxglove/framegraph/framegraph.h"
+#include "foxglove/core/math.h"
 
 PassContext::PassContext(FrameGraph* fg, FrameContext* fctx,
-            Pass* pass) : m_fg(fg), m_fctx(fctx), m_pass(pass) {
-    // fg stuff
-    m_device = fctx->get_device();
-    m_cmd = fctx->get_cmd_buffer(); 
-
-	vkCmdPushDataEXT = reinterpret_cast<PFN_vkCmdPushDataEXT>(vkGetDeviceProcAddr(m_device, "vkCmdPushDataEXT"));
+            VulkanContext* ctx, Pass* pass)
+    : m_fg(fg), m_fctx(fctx), m_ctx(ctx), m_pass(pass) {
+    m_device = m_ctx->get_device(); 
+    m_cmd = fctx->get_cmd_buffer();
 }
 
 void PassContext::bind_compute_pipeline(ComputePipeline* pipeline) {
@@ -17,7 +16,8 @@ void PassContext::bind_compute_pipeline(ComputePipeline* pipeline) {
     // bind pipeline
 	vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, 
             pipeline->get_pipeline());
-    update_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_COMPUTE);
+    //update_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_COMPUTE);
+    update_descriptor_heap(); 
 }
 
 void PassContext::dispatch_compute(uint32_t x, uint32_t y, uint32_t z) {
@@ -30,21 +30,20 @@ GraphicsContext PassContext::bind_graphics_pipeline(GraphicsPipeline* pipeline) 
 	vkCmdBindPipeline(m_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, 
             pipeline->get_pipeline());
     
-    update_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
-
+    //update_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    update_descriptor_heap(); 
+    
     GraphicsPass* g_pass = static_cast<GraphicsPass*>(m_pass);
     VkRect2D render_area = g_pass->get_info().render_area;
     
-    return GraphicsContext(m_cmd, pipeline, m_fg, render_area);
+    return GraphicsContext(m_ctx, m_cmd, pipeline, m_fg, render_area);
 }
-
+/*
 void PassContext::update_descriptor_sets(Pipeline* pipeline, 
         VkPipelineBindPoint bind_point) {
     const std::vector<BindingGroup>& bind_groups = m_pass->get_bind_groups();
 
-    if(bind_groups.empty()) {
-        return;
-    }
+    if(bind_groups.empty()) return;
     
     // build writes
     DescriptorAllocator* desc_allocator = &m_fctx->get_descriptor_allocator();
@@ -128,13 +127,13 @@ void PassContext::update_descriptor_sets(Pipeline* pipeline,
         desc_allocator->clear_descriptors(device);
     });
 }
+*/
 
-void PassContext::update_descriptor_heap(Pipeline* pipeline,
-        VkPipelineBindPoint bind_point) {
+void PassContext::update_descriptor_heap() {
     // TODO: THIS SHOULD GO EARLIER
-    const std::vector<BindingGroup>& bind_groups = m_pass->get_bind_groups();
+    const BindingGroup& bindings = m_pass->get_bindings();
 
-    if(bind_groups.empty()) return;
+    if(bindings.buffers.empty() && bindings.textures.empty()) return;
     
     DescriptorHeapAllocator& heap = *m_fctx->get_descriptor_heap();
     
@@ -142,10 +141,9 @@ void PassContext::update_descriptor_heap(Pipeline* pipeline,
     std::vector<TextureDescriptorInfo> textures;
 
     // IF WE'RE USING HEAP, BIND ALL DESCRIPTORS TO SET 0, USE BINDING NUM
-    const BindingGroup& g = bind_groups[0];
-    size_t total_bindings = g.buffers.size() + g.textures.size();
+    size_t total_bindings = bindings.buffers.size() + bindings.textures.size();
 
-    for(const BufferBinding& bb : g.buffers) {
+    for(const BufferBinding& bb : bindings.buffers) {
         FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
         if(!heap.has_resource(fg_buffer->get_resource())) {
             buffers.push_back({
@@ -155,7 +153,7 @@ void PassContext::update_descriptor_heap(Pipeline* pipeline,
         }
     }
 
-    for(const TextureBinding& tb : g.textures) {
+    for(const TextureBinding& tb : bindings.textures) {
         FGTexture* fg_texture = m_fg->get_texture(tb.handle);
         if(!heap.has_resource(fg_texture->get_resource())) {
             textures.push_back({
@@ -166,21 +164,20 @@ void PassContext::update_descriptor_heap(Pipeline* pipeline,
     }
 
     heap.add_descriptors(buffers, textures);
-    heap.write_pending(m_device);
+    heap.write_pending();
 
     // now write into data the size of total_bindings * uint32_t
     std::vector<uint32_t> push_data(total_bindings);
     
-    for(const BufferBinding& bb : g.buffers) {
+    for(const BufferBinding& bb : bindings.buffers) {
         BufferHandle handle = m_fg->get_buffer(bb.handle)->get_resource();
         push_data[bb.binding] = heap.get_index(handle);
     }
 
-    for(const TextureBinding& tb : g.textures) {
+    for(const TextureBinding& tb : bindings.textures) {
         TextureHandle handle = m_fg->get_texture(tb.handle)->get_resource();
         push_data[tb.binding] = heap.get_index(handle);
     }
-
 
     VkPushDataInfoEXT push_data_info = {
         .sType = VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT,
@@ -188,11 +185,11 @@ void PassContext::update_descriptor_heap(Pipeline* pipeline,
         .offset = 0,
         .data = {
             .address = push_data.data(),
-            .size = push_data.size()
+            .size = align_up(push_data.size(), 4)
         }
     };
 
-    vkCmdPushDataEXT(m_cmd, &push_data_info);
-    
+    m_ctx->vkCmdPushDataEXT(m_cmd, &push_data_info);
+    heap.bind_descriptor_heap(m_cmd); 
 }
 

@@ -87,8 +87,12 @@ public:
         textures.insert(std::end(textures), std::begin(new_textures), 
                 std::end(new_textures));
     }
+    
+    bool has_resource(BufferHandle h) {
+        return handle_to_slot.contains(h);
+    }
 
-    bool has_resource(Handle h) {
+    bool has_resource(TextureHandle h) {
         return handle_to_slot.contains(h);
     }
 
@@ -99,9 +103,10 @@ public:
     uint32_t get_index(TextureHandle h) {
         return slots[handle_to_slot[h]].offset / m_image_descriptor_size;
     }
-    
+
     // update once a frame?
-    void write_pending(VkDevice device);
+    void write_pending();
+    void bind_descriptor_heap(VkCommandBuffer cmd);
 private:
     uint32_t allocate_section(Handle handle, uint32_t section);
 
@@ -110,16 +115,14 @@ private:
         return slots.size() - 1;
     }
 
+    VulkanContext* m_ctx;
     ResourceManager* m_rm;
     
     HeapInfo m_resource_heap;
     std::vector<SectionInfo> sections;
 
-
-    uint32_t resource_count = 0;
-    // TODO: MOVE TO A BETTER PLACE
-    // another one somewhere else i think pass context
-	PFN_vkWriteResourceDescriptorsEXT vkWriteResourceDescriptorsEXT{ nullptr };
+    // TODO: CHANGE HANDLE TO SLOT TO HANDLE_TO_HANDLE
+    // TO KEEP TRACK OF GEN
 
     std::vector<BufferDescriptorInfo> buffers;
     std::vector<TextureDescriptorInfo> textures;

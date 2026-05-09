@@ -37,7 +37,7 @@ public:
     FGBufferHandle register_external_buffer(const std::string& name,
             BufferHandle resource);
     FGTextureHandle register_external_texture(const std::string& name,
-            TextureDesc desc, TextureHandle resource);
+            TextureHandle resource);
 
     FGBuffer* get_buffer(FGBufferHandle handle);
     FGTexture* get_texture(FGTextureHandle handle);

@@ -1,4 +1,5 @@
 #include "foxglove/vulkan/descriptors.h"
+#include "foxglove/core/math.h"
 
 void DescriptorLayoutBuilder::add_binding(uint32_t binding, VkDescriptorType type) {
     VkDescriptorSetLayoutBinding newbind {};
@@ -112,18 +113,16 @@ std::vector<VkDescriptorSet> DescriptorAllocator::allocate(VkDevice device, std:
     return ds;
 }
 
-uint32_t align(uint32_t value, uint32_t alignment) {
-    return (value + alignment - 1) & ~(alignment - 1);
-}
+//
+// DescriptorHeapAllocator
+//
+
 
 void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
+    m_ctx = ctx;
     m_rm = rm;
 
-    VkDevice device = ctx->get_device();
     VkPhysicalDevice physical_device = ctx->get_physical_device();
-		
-	vkWriteResourceDescriptorsEXT = reinterpret_cast<PFN_vkWriteResourceDescriptorsEXT>(vkGetDeviceProcAddr(device, "vkWriteResourceDescriptorsEXT"));
-
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT
     };
@@ -138,9 +137,9 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
     m_image_align = heap_props.imageDescriptorAlignment;
 
     m_reserved_size = heap_props.minResourceHeapReservedRange;
-    m_buffer_descriptor_size = align(heap_props.bufferDescriptorSize,
+    m_buffer_descriptor_size = align_up(heap_props.bufferDescriptorSize,
             m_buffer_align);
-    m_image_descriptor_size = align(heap_props.imageDescriptorSize,
+    m_image_descriptor_size = align_up(heap_props.imageDescriptorSize,
             m_image_align);
     
     uint32_t persistent_images = 50;
@@ -160,7 +159,7 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
         .descriptor_size = m_image_descriptor_size,
         .alignment = m_image_align
     };
-    offset = align(offset + sections[0].size, m_image_descriptor_size);
+    offset = align_up(offset + sections[0].size, m_image_descriptor_size);
     
     // Transient images
     sections[1] = {
@@ -170,7 +169,7 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
         .descriptor_size = m_image_descriptor_size,
         .alignment = m_image_align
     };
-    offset = align(offset + sections[1].size, m_buffer_descriptor_size);
+    offset = align_up(offset + sections[1].size, m_buffer_descriptor_size);
     
     // Persistent buffers
     sections[2] = {
@@ -180,7 +179,7 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
         .descriptor_size = m_buffer_descriptor_size,
         .alignment = m_buffer_align
     };
-    offset = align(offset + sections[2].size, m_buffer_descriptor_size);
+    offset = align_up(offset + sections[2].size, m_buffer_descriptor_size);
     
     // Transient buffers
     sections[3] = {
@@ -194,7 +193,7 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
     // heap_size
     offset += sections.back().size;
 
-    uint32_t heap_size = offset;
+    uint32_t heap_size = offset + m_reserved_size;
     std::cout << heap_size << std::endl;
         
     BufferHandle rh_buffer = m_rm->create_buffer(BufferDesc{
@@ -229,9 +228,12 @@ uint32_t DescriptorHeapAllocator::allocate_section(Handle handle,
 
     if(info.current_offset == info.start_offset + info.size) {
         std::cerr << "full section" << std::endl; 
+        // for now
+        info.current_offset = 0;
     } else if(info.current_offset > info.start_offset + info.size) {
         std::cerr << "somehow offset unaligned" << std::endl;
     }
+
 
     uint32_t slot = get_free_slot();
     
@@ -243,13 +245,13 @@ uint32_t DescriptorHeapAllocator::allocate_section(Handle handle,
     
     // offset is descriptor_size agnostic (pure offset)
     info.current_offset += info.descriptor_size;
-    info.current_offset = align(info.current_offset, info.alignment);
+    info.current_offset = align_up(info.current_offset, info.alignment);
 
     handle_to_slot[handle] = slot;
     return slot;
 }
  
-void DescriptorHeapAllocator::write_pending(VkDevice device) {
+void DescriptorHeapAllocator::write_pending() {
     if(buffers.empty() && textures.empty()) return;
 
     std::vector<VkDeviceAddressRangeEXT> device_address_ranges;
@@ -307,13 +309,26 @@ void DescriptorHeapAllocator::write_pending(VkDevice device) {
         });
     }
 
-    vkWriteResourceDescriptorsEXT(device, 
+    m_ctx->vkWriteResourceDescriptorsEXT(m_ctx->get_device(), 
         static_cast<uint32_t>(resource_descriptor_infos.size()),
         resource_descriptor_infos.data(), 
         host_address_ranges.data()
     );
 
-    resource_count += buffers.size() + textures.size();
     buffers.clear();
     textures.clear();
+}
+
+void DescriptorHeapAllocator::bind_descriptor_heap(VkCommandBuffer cmd) {
+    VkBindHeapInfoEXT bind_heap_info{
+        .sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT,
+        .heapRange{
+            .address = m_resource_heap.address,
+            .size = m_resource_heap.size
+        },
+        .reservedRangeOffset = m_resource_heap.size - m_reserved_size,
+        .reservedRangeSize = m_reserved_size 
+    };
+
+    m_ctx->vkCmdBindResourceHeapEXT(cmd, &bind_heap_info); 
 }

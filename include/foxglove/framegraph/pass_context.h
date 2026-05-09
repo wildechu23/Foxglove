@@ -10,7 +10,7 @@ class FrameGraph;
 
 class PassContext {
 public:
-    PassContext(FrameGraph* fg, FrameContext* fctx, Pass* pass);
+    PassContext(FrameGraph* fg, FrameContext* fctx, VulkanContext* ctx, Pass* pass);
 
     VkCommandBuffer get_cmd() { return m_cmd; }
     TextureResource* get_swapchain() const;
@@ -20,22 +20,19 @@ public:
 
     GraphicsContext bind_graphics_pipeline(GraphicsPipeline* pipeline);
 private:
-    void update_descriptor_sets(Pipeline* pipeline, 
-            VkPipelineBindPoint bind_point);
+    //void update_descriptor_sets(Pipeline* pipeline, 
+    //        VkPipelineBindPoint bind_point);
 
-
-    void update_descriptor_heap(Pipeline* pipeline, 
-            VkPipelineBindPoint bind_point);
+    void update_descriptor_heap();
 
     VkRenderingInfo build_rendering_info(GraphicsPass* pass);
 
-    PFN_vkCmdPushDataEXT vkCmdPushDataEXT{nullptr};
-
-    VkDevice m_device;
     FrameGraph* m_fg;
     VkCommandBuffer m_cmd;
-
     FrameContext* m_fctx;
+    
+    VulkanContext* m_ctx;
+    VkDevice m_device;
 
     Pass* m_pass;
 

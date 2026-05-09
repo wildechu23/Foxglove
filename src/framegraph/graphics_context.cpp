@@ -1,5 +1,6 @@
 #include "foxglove/framegraph/graphics_context.h"
 #include "foxglove/framegraph/framegraph.h"
+#include "foxglove/core/math.h"
 
 GraphicsContext& GraphicsContext::bind_viewport(VkViewport viewport) {
     vkCmdSetViewport(m_cmd, 0, 1, &viewport);
@@ -28,12 +29,31 @@ GraphicsContext& GraphicsContext::bind_index_buffer(FGBufferHandle handle,
     return *this;
 }
 
+/*
 GraphicsContext& GraphicsContext::push_constants(const void* data, 
         size_t size, uint32_t offset) {
     vkCmdPushConstants(m_cmd, 
             m_pipeline->get_pipeline_layout(),
             VK_SHADER_STAGE_VERTEX_BIT,
             offset, size, data);
+    return *this;
+}
+*/
+
+// TODO: UTIL ALIGN FUNC
+GraphicsContext& GraphicsContext::push_constants(const void* data,
+        size_t size, uint32_t offset) {
+    VkPushDataInfoEXT push_data_info = {
+        .sType = VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT,
+        .pNext = NULL,
+        .offset = offset,
+        .data = {
+            .address = data,
+            .size = static_cast<uint32_t>(align_up(size, 4))
+        }
+    };
+
+    m_ctx->vkCmdPushDataEXT(m_cmd, &push_data_info);
     return *this;
 }
 

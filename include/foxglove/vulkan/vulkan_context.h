@@ -25,6 +25,11 @@ public:
     
     VkQueue get_transfer_queue() { return m_transfer_queue; }
     uint32_t get_transfer_queue_family() const { return m_transfer_queue_family_index; }
+
+    // heap extension functions
+	PFN_vkWriteResourceDescriptorsEXT vkWriteResourceDescriptorsEXT{ nullptr };
+    PFN_vkCmdBindResourceHeapEXT vkCmdBindResourceHeapEXT{nullptr };
+    PFN_vkCmdPushDataEXT vkCmdPushDataEXT{nullptr};
 private:
     bool bUseValidationLayers = true;
     

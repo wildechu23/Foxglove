@@ -13,12 +13,18 @@ public:
     PassBuilder(FrameGraph* fg, const std::string& name, PassType type);
     
     // Descriptor binding
+    PassBuilder& bind_buffer(FGBufferHandle handle, BufferUsage usage, 
+            ResourceAccess access, uint32_t binding);
+    PassBuilder& bind_texture(FGTextureHandle handle, TextureUsage usage,
+            ResourceAccess access, uint32_t binding);
+    /*
     PassBuilder& bind_buffer(FGBufferHandle handle,
             BufferUsage usage, ResourceAccess access,
             uint32_t set, uint32_t binding);
     PassBuilder& bind_texture(FGTextureHandle handle, 
             TextureUsage usage, ResourceAccess access,
             uint32_t set, uint32_t binding);
+    */
     
     // Render bindings
     PassBuilder& bind_color_attachment(FGTextureHandle handle,
@@ -56,15 +62,14 @@ public:
 
     Pass* build();    
 private:
-    void check_init(uint32_t set);
+    // void check_init(uint32_t set);
 
     FrameGraph* m_fg;
     std::string m_name;
     PassType m_type;
     
-    // TODO: ADD IN THE SYSTEM USED ELSEWHERE
-    // ITS IN SHADER.H AS DESCRIPTORSETLAYOUT.ADD_BINDING()
-    std::unordered_map<uint32_t, BindingGroup> m_bind_groups;
+    //std::unordered_map<uint32_t, BindingGroup> m_bind_groups;
+    BindingGroup m_bindings;
 
     // Graphics
     std::vector<ColorAttachment> m_color_attachments;

@@ -16,8 +16,8 @@ protected:
     VkPipeline m_pipeline;
     VkPipelineLayout m_pipeline_layout;
 
-    std::vector<VkDescriptorSetLayout> m_descriptor_layouts;
-    std::vector<VkPushConstantRange> m_push_constant_ranges;
+    //std::vector<VkDescriptorSetLayout> m_descriptor_layouts;
+    //std::vector<VkPushConstantRange> m_push_constant_ranges;
    
     Pipeline(VkDevice device) :
         m_device(device),
@@ -25,9 +25,11 @@ protected:
         m_pipeline_layout(VK_NULL_HANDLE) {}
 
     void cleanup() {
+        /*
         for(auto& layout : m_descriptor_layouts) {
             vkDestroyDescriptorSetLayout(m_device, layout, nullptr);
         }
+        */
         vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
         vkDestroyPipeline(m_device, m_pipeline, nullptr);
     }

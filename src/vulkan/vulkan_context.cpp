@@ -48,6 +48,11 @@ void VulkanContext::init(Window& window) {
         .pNext = nullptr,
         .descriptorHeap = VK_TRUE
     };
+    VkPhysicalDeviceShaderUntypedPointersFeaturesKHR untyped_ptr_features = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR,
+        .pNext = nullptr,
+        .shaderUntypedPointers = VK_TRUE
+    };
     
     // Needs VK_EXT_descriptor_heap
     // - requires VK_KHR_maintenance5
@@ -56,7 +61,9 @@ void VulkanContext::init(Window& window) {
 		.set_minimum_version(1, 3)
         .add_required_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
         .add_required_extension(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME)
+        .add_required_extension(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME)
         .add_required_extension_features(descriptor_heap_features)
+        .add_required_extension_features(untyped_ptr_features)
 		.set_required_features_13(features13)
 		.set_required_features_12(features12)
 		.set_surface(m_surface)
@@ -91,7 +98,17 @@ void VulkanContext::init(Window& window) {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(m_physical_device, &props);
     std::cout << "Selected device: " << props.deviceName << std::endl;
-    
+   
+    // extension functions
+    vkCmdPushDataEXT = 
+        reinterpret_cast<PFN_vkCmdPushDataEXT>(
+            vkGetDeviceProcAddr(m_device, "vkCmdPushDataEXT"));
+	vkWriteResourceDescriptorsEXT = 
+        reinterpret_cast<PFN_vkWriteResourceDescriptorsEXT>(
+            vkGetDeviceProcAddr(m_device, "vkWriteResourceDescriptorsEXT"));
+    vkCmdBindResourceHeapEXT = 
+        reinterpret_cast<PFN_vkCmdBindResourceHeapEXT>(
+            vkGetDeviceProcAddr(m_device, "vkCmdBindResourceHeapEXT"));
 }
 
 void VulkanContext::cleanup() {

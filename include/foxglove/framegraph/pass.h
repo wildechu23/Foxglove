@@ -97,14 +97,26 @@ public:
     }
 
     const PassType get_type() const { return m_type; }
-
-    const std::vector<BindingGroup>& get_bind_groups() const {
+    const BindingGroup& get_bindings() const { return m_bindings; }
+    
+    /*
+    const std::vector<BindingGroup>&.get_bindings() const {
         return m_bind_groups;
     }
+    */
+    
     
 private:
     friend PassBuilder;
 
+    PassDesc(const std::string& name, PassType type,
+            BindingGroup bindings,
+            std::function<void(PassContext&)> execute_fn) :
+        m_name(name),
+        m_type(type),
+        m_bindings(bindings),
+        m_execute_fn(execute_fn) {}
+    /*
     PassDesc(const std::string& name, PassType type,
             std::vector<BindingGroup> bind_groups,
             std::function<void(PassContext&)> execute_fn) :
@@ -112,14 +124,15 @@ private:
         m_type(type),
         m_bind_groups(bind_groups),
         m_execute_fn(execute_fn) {}
+    */
 
 
     const std::string m_name;
     const PassType m_type;
     
-    const std::vector<BindingGroup> m_bind_groups;
+    const BindingGroup m_bindings;
+    //const std::vector<BindingGroup> m_bind_groups;
     
-    // TODO: CONVERT TO FRAMECONTEXT
     const std::function<void(PassContext&)> m_execute_fn;
 };
 
@@ -132,23 +145,19 @@ public:
 
     const PassDesc& get_desc() const { return m_desc; }
     const PassType get_type() const { return m_desc.get_type(); }
-    //const std::vector<BufferBinding>& get_buffers() const { return m_desc.get_buffers(); }
-    //const std::vector<TextureBinding>& get_textures() const { return m_desc.get_textures(); }
 
     void enumerate_buffers(std::function<void(const BufferBinding&)> fn) const {
-        for(const BindingGroup& g : m_desc.get_bind_groups()) {
-            for(const BufferBinding& bb : g.buffers) fn(bb);
-        }
+        const BindingGroup& g = m_desc.get_bindings();
+        for(const BufferBinding& bb : g.buffers) fn(bb);
     }
 
     virtual void enumerate_textures(std::function<void(const TextureBinding&)> fn) const {
-        for(const BindingGroup& g : m_desc.get_bind_groups()) {
-            for(const TextureBinding& tb : g.textures) fn(tb);
-        }
+        const BindingGroup& g = m_desc.get_bindings();
+        for(const TextureBinding& tb : g.textures) fn(tb);
     }
     
-    const std::vector<BindingGroup>& get_bind_groups() const {
-        return m_desc.get_bind_groups();
+    const BindingGroup& get_bindings() const {
+        return m_desc.get_bindings();
     }
 
     void execute(PassContext& ctx) { m_desc.execute(ctx); }
@@ -216,9 +225,8 @@ public:
 
     void enumerate_textures(std::function<void(const TextureBinding&)> fn) const {
         // Descriptors
-        for(const BindingGroup& g : m_desc.get_bind_groups()) {
-            for(const TextureBinding& tb : g.textures) fn(tb);
-        }
+        const BindingGroup& g = m_desc.get_bindings();
+        for(const TextureBinding& tb : g.textures) fn(tb);
             
         // Attachments
         for(const ColorAttachment& ra : m_info.color_attachments) {
@@ -249,8 +257,6 @@ public:
 private:
     GraphicsPassInfo m_info;
 
-    friend class FrameGraph;
-
     bool b_attachments = false;
 
     std::vector<VkRenderingAttachmentInfo> m_color_attachment_info;
@@ -258,5 +264,7 @@ private:
     VkRenderingAttachmentInfo m_stencil_attachment_info;
 
     VkRenderingInfo m_rendering_info;
+    
+    friend class FrameGraph;
 };
 

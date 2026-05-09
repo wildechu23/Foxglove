@@ -2,7 +2,6 @@
 #include "foxglove/renderer/renderer.h"
 #include "foxglove/resources/loader.h"
 
-
 namespace fs = std::filesystem;
 
 int main() {
@@ -24,15 +23,17 @@ int main() {
 
     ShaderLibrary& sl = renderer->get_sl();
     PipelineManager& pm = renderer->get_pm();
-
+    
+    
     // load meshes
     Loader loader(*rm, *um);
     std::vector<std::shared_ptr<MeshData>> mesh = 
         loader.load_gltf_meshes(src_dir/"assets/basicmesh.glb").value();
     MeshData& mesh0 = *mesh[2];
+    
 
     ComputeShader* shader = sl.create_compute_shader(
-            fs::path("shaders/gradient.comp.spv"));
+            fs::path("shaders/gradient_heap.comp.spv"));
 
     VertexShader* vert = sl.create_vertex_shader(
             fs::path("shaders/colored_triangle_mesh.vert.spv"));
@@ -55,10 +56,27 @@ int main() {
 
     GraphicsPipelineConfig config = gcb.build();
     GraphicsPipeline* triangle = pm.get_graphics_pipeline(config);
+
+    // TODO: CREATE RESIZING DRAW IMAGES
+    TextureHandle draw_image_r = rm->create_texture(TextureDesc{
+        .extent = {width, height},
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            | VK_IMAGE_USAGE_STORAGE_BIT
+            | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+    });
+
+    TextureHandle depth_image_r = rm->create_texture(TextureDesc{
+        .extent = {width, height},
+        .format = VK_FORMAT_D32_SFLOAT,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+    });
     
     FrameGraph& fg = renderer->get_fg();
     while(!engine.window()->should_close()) {
         engine.begin_frame();
+
         glm::mat4 view = engine.camera()->get_view_matrix();
         glm::mat4 projection = engine.camera()->get_projection_matrix();
 
@@ -73,38 +91,25 @@ int main() {
 
         FGBufferHandle mesh_i = fg.register_external_buffer(
                 "mesh index buffer", mesh0.index_buffer);
-
-        FGTextureHandle draw_image = fg.create_texture("draw image", 
-            TextureDesc{
-                .extent = {width, height},
-                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-                .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-                    | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-                    | VK_IMAGE_USAGE_STORAGE_BIT
-                    | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-            });
-
-        FGTextureHandle depth_image = fg.create_texture("depth image", 
-            TextureDesc{
-                .extent = {width, height},
-                .format = VK_FORMAT_D32_SFLOAT,
-                .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-            });
-
+        FGTextureHandle draw_image = fg.register_external_texture(
+                "draw image", draw_image_r);
+        FGTextureHandle depth_image = fg.register_external_texture(
+                "depth image", depth_image_r);
+        
         fg.create_pass("test", PassType::Clear)
-            .clear_color(draw_image, Color{0.5f, 0.5f, 0.5f, 1.f})
+            .clear_color(draw_image, Color{0.3f, 0.5f, 0.7f, 1.f})
             .build();
-        /*
+        
         fg.create_pass("compute", PassType::Compute)
             .bind_texture(draw_image, TextureUsage::StorageImage,
-                    ResourceAccess::ReadWrite, 0, 0)
+                    ResourceAccess::ReadWrite, 0)
             .execute([&](PassContext ctx) {
                 ctx.bind_compute_pipeline(background);
                 ctx.dispatch_compute(16, 16, 1);
             })
             .build();
-            */
-
+            
+        
         fg.create_pass("triangle", PassType::Graphics)
             .bind_color_attachment(draw_image, 
                     LoadOp::Load, StoreOp::Store)
@@ -120,7 +125,7 @@ int main() {
                     );
             })
             .build();
-
+        
         fg.create_pass("present", PassType::Present)
             .present(draw_image)
             .build();

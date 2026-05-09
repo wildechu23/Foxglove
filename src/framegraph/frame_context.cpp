@@ -12,7 +12,7 @@ void FrameContext::init(VulkanContext* ctx, DescriptorHeapAllocator* heap) {
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 	};
 
-	m_descriptor_allocator.init_pool(device, 10, sizes);
+	//m_descriptor_allocator.init_pool(device, 10, sizes);
 
     // init commands
     VkCommandPoolCreateInfo cmd_pool_info = {
@@ -71,5 +71,5 @@ void FrameContext::cleanup() {
 
     m_deletion_queue.flush();
 
-	m_descriptor_allocator.destroy_pool(m_device);
+	//m_descriptor_allocator.destroy_pool(m_device);
 }

@@ -7,9 +7,9 @@ class FrameGraph;
 
 class GraphicsContext {
 public:
-    GraphicsContext(VkCommandBuffer cmd, GraphicsPipeline* pipeline,
-            FrameGraph* fg, VkRect2D default_rect) : 
-        m_cmd(cmd), m_pipeline(pipeline), m_fg(fg),
+    GraphicsContext(VulkanContext* ctx, VkCommandBuffer cmd, 
+            GraphicsPipeline* pipeline, FrameGraph* fg, VkRect2D default_rect)
+        : m_ctx(ctx), m_cmd(cmd), m_pipeline(pipeline), m_fg(fg),
         m_default_rect(default_rect) {}
 
     GraphicsContext& bind_viewport(VkViewport viewport);
@@ -40,6 +40,7 @@ public:
 private:
     void check_defaults();
 
+    VulkanContext* m_ctx;
     VkCommandBuffer m_cmd;
     GraphicsPipeline* m_pipeline;
 

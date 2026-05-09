@@ -42,9 +42,11 @@ public:
     TextureResource* get_swapchain() { return m_swapchain; }
     void set_swapchain(TextureResource* ptr) { m_swapchain = ptr; }
     
+    /*
     DescriptorAllocator& get_descriptor_allocator() {
         return m_descriptor_allocator;
     }
+    */
 
     DescriptorHeapAllocator* get_descriptor_heap() {
         return m_descriptor_heap;

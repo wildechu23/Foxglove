@@ -132,7 +132,7 @@ void PipelineManager::cleanup() {
         pipeline->cleanup();
     }
 }
-
+/*
 void PipelineManager::create_descriptor_set_layouts(Pipeline* pipeline, 
         std::vector<DescriptorSetLayout>& layouts) {
     pipeline->m_descriptor_layouts.reserve(layouts.size());
@@ -155,7 +155,9 @@ void PipelineManager::create_descriptor_set_layouts(Pipeline* pipeline,
         pipeline->m_descriptor_layouts.push_back(vk_layout);
     }
 }
+*/
 
+/*
 void PipelineManager::create_push_constant_ranges(Pipeline* pipeline, 
         std::vector<PushConstantInfo>& pc_infos) {
     pipeline->m_push_constant_ranges.reserve(pc_infos.size());
@@ -171,6 +173,7 @@ void PipelineManager::create_push_constant_ranges(Pipeline* pipeline,
         pipeline->m_push_constant_ranges.push_back(range);
     }
 }
+*/
 
 ComputePipeline* PipelineManager::get_compute_pipeline(ComputeShader* shader) {
     ComputePipelineDesc desc = { shader };
@@ -182,7 +185,8 @@ ComputePipeline* PipelineManager::get_compute_pipeline(ComputeShader* shader) {
     }
 
     ComputePipeline* pipeline = new ComputePipeline(m_device, desc);
-
+    
+    /*
     // create descriptorsetlayouts
     std::vector<DescriptorSetLayout> layouts = 
         ShaderLibrary::reflect_layout(shader);
@@ -191,11 +195,13 @@ ComputePipeline* PipelineManager::get_compute_pipeline(ComputeShader* shader) {
 
     create_descriptor_set_layouts(pipeline, layouts);
     create_push_constant_ranges(pipeline, infos);
-
+    
+    
     std::vector<VkDescriptorSetLayout>& vk_layouts = 
         pipeline->m_descriptor_layouts;
     std::vector<VkPushConstantRange>& vk_ranges =
         pipeline->m_push_constant_ranges;
+    
 
     VkPipelineLayoutCreateInfo layout_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -208,6 +214,7 @@ ComputePipeline* PipelineManager::get_compute_pipeline(ComputeShader* shader) {
 
     vkCreatePipelineLayout(m_device, &layout_info, nullptr, 
             &pipeline->m_pipeline_layout);
+            */
 
     VkPipelineShaderStageCreateInfo stage_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -217,11 +224,17 @@ ComputePipeline* PipelineManager::get_compute_pipeline(ComputeShader* shader) {
         .pName = "main"
     };
 
+    VkPipelineCreateFlags2CreateInfo pipeline_flags_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
+        .pNext = nullptr, 
+        .flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT
+    };
+
     VkComputePipelineCreateInfo compute_pipeline_info = {
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .stage = stage_info,
-        .layout = pipeline->m_pipeline_layout
+        .pNext = &pipeline_flags_info,
+        .stage = stage_info
+        //.layout = pipeline->m_pipeline_layout
     };
 
     // TODO: consider bundling them i dunno
@@ -277,12 +290,15 @@ void PipelineManager::build_graphics_pipeline(
     shader_stages.push_back(vs_info);
     shader_stages.push_back(fs_info);
     
+    /*
     // Build pipeline layout
     std::vector<VkDescriptorSetLayout>& layouts = 
         pipeline->m_descriptor_layouts;
+    
     std::vector<VkPushConstantRange>& ranges =
         pipeline->m_push_constant_ranges;
-
+    
+    
     VkPipelineLayoutCreateInfo layout_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
@@ -294,6 +310,7 @@ void PipelineManager::build_graphics_pipeline(
 
     vkCreatePipelineLayout(m_device, &layout_info, nullptr, 
             &pipeline->m_pipeline_layout);
+    */
     
     // Build pipeline
     VkPipelineViewportStateCreateInfo viewportState = {
@@ -341,10 +358,17 @@ void PipelineManager::build_graphics_pipeline(
 		.pDynamicStates = &state[0]
 	};
 
+    VkPipelineCreateFlags2CreateInfo pipeline_flags_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
+        .pNext = &render_info, 
+        .flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT
+    };
+
+
 
 	VkGraphicsPipelineCreateInfo pipelineInfo = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-		.pNext = &render_info,
+		.pNext = &pipeline_flags_info,
 		.stageCount = (uint32_t)shader_stages.size(),
 		.pStages = shader_stages.data(),
 		.pVertexInputState = &_vertexInputInfo,
@@ -355,7 +379,7 @@ void PipelineManager::build_graphics_pipeline(
 		.pDepthStencilState = &desc.m_depth_stencil,
 		.pColorBlendState = &colorBlending,
 		.pDynamicState = &dynamicInfo,
-		.layout = pipeline->m_pipeline_layout
+		//.layout = pipeline->m_pipeline_layout
 	};
 
 	if(vkCreateGraphicsPipelines(m_device, m_vk_pipeline_cache, 1, &pipelineInfo, nullptr, &pipeline->m_pipeline) != VK_SUCCESS) {
@@ -380,8 +404,11 @@ GraphicsPipeline* PipelineManager::get_graphics_pipeline(GraphicsPipelineConfig&
 
     // grab and merge?
     GraphicsShaderSet& set = config.shader_set;
+
+    /*
     std::vector<DescriptorSetLayout> final_layouts;
     std::vector<PushConstantInfo> final_pc_infos;
+    
 
     std::array<Shader*, 3> shaders = { set.vs, set.fs, set.gs };
     for(Shader* shader : shaders) {
@@ -430,9 +457,10 @@ GraphicsPipeline* PipelineManager::get_graphics_pipeline(GraphicsPipelineConfig&
         [](const PushConstantInfo& a, const PushConstantInfo& b) {
             return a.offset < b.offset;
         });
+    */
 
-    create_descriptor_set_layouts(pipeline, final_layouts);
-    create_push_constant_ranges(pipeline, final_pc_infos);
+    //create_descriptor_set_layouts(pipeline, final_layouts);
+    //create_push_constant_ranges(pipeline, final_pc_infos);
 
     build_graphics_pipeline(pipeline, config.shader_set);
 

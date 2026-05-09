@@ -42,9 +42,9 @@ FGBufferHandle FrameGraph::register_external_buffer(const std::string& name,
     return handle;
 }
 
-FGTextureHandle FrameGraph::register_external_texture(const std::string& name,
-        TextureDesc desc, TextureHandle resource) {
-    FGTextureHandle handle = m_textures.create(name, desc, resource);
+FGTextureHandle FrameGraph::register_external_texture(const std::string& name, 
+        TextureHandle resource) {
+    FGTextureHandle handle = m_textures.create(name, resource);
     m_external_textures.push_back(handle);
     return handle;
 }
@@ -282,6 +282,9 @@ void FrameGraph::collect_pass_barriers() {
         pass->enumerate_buffers([this, pass](const BufferBinding& b) {
             FGBuffer* buffer = get_buffer(b.handle);
 
+            if(buffer->get_usage() == b.usage &&
+               buffer->get_access() == b.access) return;
+
             BufferTransitionInfo bti = {
                 buffer->get_handle(),
                 buffer->get_usage(),         // src
@@ -299,6 +302,10 @@ void FrameGraph::collect_pass_barriers() {
 
         pass->enumerate_textures([this, pass](const TextureBinding& t) {
             FGTexture* texture = get_texture(t.handle); 
+
+            if(texture->get_usage() == t.usage &&
+               texture->get_access() == t.access) return;
+
             TextureTransitionInfo tti = {
                 texture->get_handle(),
                 texture->get_usage(),        // src
@@ -573,7 +580,7 @@ void FrameGraph::execute(FrameContext& fctx) {
         }
 
         
-        PassContext ctx(this, &fctx, pass.get());
+        PassContext ctx(this, &fctx, m_ctx, pass.get());
 
         if(pass->get_type() == PassType::Graphics) {
             GraphicsPass* g_pass = static_cast<GraphicsPass*>(pass.get());

@@ -19,4 +19,3 @@ enum class JobType : uint8_t {
 };
 
 
-
