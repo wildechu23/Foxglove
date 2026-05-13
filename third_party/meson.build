@@ -4,6 +4,7 @@ vkb_inc = include_directories('vkbootstrap')
 vma_inc = include_directories('vma')
 spirv_reflect_inc = include_directories('spirv-reflect')
 xxhash_inc = include_directories('xxhash')
+stb_inc = include_directories('stb')
 
 vkb_dep = declare_dependency(
   sources: files('vkbootstrap/VkBootstrap.cpp'),
@@ -27,9 +28,14 @@ xxhash_dep = declare_dependency(
   compile_args: ['-DXXH_INLINE_ALL']
 )
 
+stb_dep = declare_dependency(
+  include_directories : stb_inc,
+)
+
 third_party_deps = [
   vkb_dep, 
   vma_dep, 
   spirv_reflect_dep,
   xxhash_dep,
+  stb_dep
 ]

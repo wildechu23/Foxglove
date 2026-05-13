@@ -1,0 +1,49 @@
+#version 460
+
+#extension GL_EXT_descriptor_heap : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+//size of a workgroup for compute
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout(descriptor_heap, rgba16f) uniform image2D Textures[];
+
+layout(push_constant, std430) uniform PushConstants {
+    int input_idx;
+    int output_idx;
+
+    vec2 center;
+    float start;
+    float strength;
+    int samples;
+} pc;
+
+
+#define INPUT_IMAGE Textures[pc.input_idx]
+#define OUTPUT_IMAGE Textures[pc.output_idx]
+
+void main() {    
+    ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(INPUT_IMAGE);
+
+    
+    if (texCoord.x >= size.x || texCoord.y >= size.y)
+        return;
+    
+    vec2 uv = (vec2(texCoord) + 0.5) / vec2(size);
+    vec2 uv_centered = uv - pc.center;
+    float precompute = pc.strength * (1.0 / float(pc.samples - 1));
+
+    vec4 color = vec4(0.0);
+    for(int i = 0; i < pc.samples; i++) {
+        float scale = pc.start + float(i) * precompute;
+        vec2 sample_uv = pc.center + scale * uv_centered;
+        ivec2 sample_coord = ivec2(clamp(sample_uv * vec2(size),
+                                    vec2(0.5), vec2(size) - vec2(0.5)));
+
+        color += imageLoad(INPUT_IMAGE, sample_coord);
+    }
+
+    imageStore(OUTPUT_IMAGE, texCoord, color / float(pc.samples));
+
+}

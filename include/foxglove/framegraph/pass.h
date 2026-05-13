@@ -96,6 +96,7 @@ public:
         m_execute_fn(ctx);
     }
 
+    const std::string& get_name() const { return m_name; }
     const PassType get_type() const { return m_type; }
     const BindingGroup& get_bindings() const { return m_bindings; }
     
@@ -145,6 +146,7 @@ public:
 
     const PassDesc& get_desc() const { return m_desc; }
     const PassType get_type() const { return m_desc.get_type(); }
+    const std::string& get_name() const { return m_desc.get_name(); }
 
     void enumerate_buffers(std::function<void(const BufferBinding&)> fn) const {
         const BindingGroup& g = m_desc.get_bindings();

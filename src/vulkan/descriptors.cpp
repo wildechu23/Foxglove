@@ -239,7 +239,7 @@ uint32_t DescriptorHeapAllocator::allocate_section(Handle handle,
     
     slots[slot] = {
         .gen = slots[slot].gen + 1,
-        .type = ResourceType::Buffer,
+        .type = ResourceType::Buffer, // TODO: NECESSARY?
         .offset = info.start_offset + info.current_offset
     };
     
@@ -261,11 +261,18 @@ void DescriptorHeapAllocator::write_pending() {
     std::vector<VkImageViewCreateInfo> image_view_infos;
     std::vector<VkImageDescriptorInfoEXT> image_descriptor_infos;
 
+    device_address_ranges.reserve(buffers.size());
+    resource_descriptor_infos.reserve(buffers.size());
+
+    image_view_infos.reserve(textures.size());
+    image_descriptor_infos.reserve(textures.size());
+
     for(size_t i = 0; i < buffers.size(); ++i) {
         BufferDescriptorInfo info = buffers[i];
         BufferResource* resource = m_rm->get_buffer(info.resource);
         
-        uint32_t slot = allocate_section(info.resource, 3);
+        uint32_t section = info.transient ? 3 : 2;
+        uint32_t slot = allocate_section(info.resource, section);
 
         device_address_ranges.push_back({
             .address = m_rm->_get_buffer_address(resource),
@@ -288,13 +295,14 @@ void DescriptorHeapAllocator::write_pending() {
         TextureDescriptorInfo info = textures[i];
         TextureResource* resource = m_rm->get_texture(info.resource);
 
-        uint32_t slot = allocate_section(info.resource, 1);
+        uint32_t section = info.transient ? 1 : 0;
+        uint32_t slot = allocate_section(info.resource, section);
         
         image_view_infos.push_back(resource->get_view_create_info());
         image_descriptor_infos.push_back({
             .sType = VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT,
             .pView = &image_view_infos.back(),
-            .layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL //TODO: CORRECT?
+            .layout = VK_IMAGE_LAYOUT_GENERAL
         });
 
         resource_descriptor_infos.push_back({

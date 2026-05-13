@@ -8,6 +8,7 @@ cmake = import('cmake')
 fastgltf_sub = cmake.subproject('fastgltf')
 fastgltf_dep = fastgltf_sub.dependency('fastgltf')
 
+
 vulkan_dep = dependency('vulkan', required: true)
 glfw_dep = dependency('glfw3', required: true)
 glm_dep = dependency('glm', required: true)

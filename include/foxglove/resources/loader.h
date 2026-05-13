@@ -4,6 +4,9 @@
 #include "foxglove/core/handle.h"
 #include "foxglove/resources/resource.h"
 
+#include <fastgltf/core.hpp>
+#include <fastgltf/tools.hpp>
+
 #include <vector>
 #include <optional>
 #include <filesystem>
@@ -35,6 +38,14 @@ struct MeshData {
     BufferHandle vertex_buffer;
 };
 
+struct LoadedGLTF {
+    std::unordered_map<std::string, std::shared_ptr<MeshData>> meshes;
+    std::unordered_map<std::string, TextureHandle> images;
+    std::vector<SamplerHandle> samplers;
+
+    BufferHandle material_data_buffer;
+};
+
 
 class Loader {
 public:
@@ -42,8 +53,10 @@ public:
         : m_rm(rm), m_um(um) {}
     ~Loader() = default;
 
-    std::optional<std::vector<std::shared_ptr<MeshData>>> load_gltf_meshes(
+    std::optional<std::shared_ptr<LoadedGLTF>> load_gltf_meshes(
             fs::path file_path);
+    std::optional<TextureHandle> load_image(fastgltf::Asset& asset, 
+            fastgltf::Image& image);
 private:
     ResourceManager& m_rm;
     UploadManager& m_um;

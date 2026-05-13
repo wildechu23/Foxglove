@@ -83,3 +83,4 @@ protected:
 
 using BufferPool = ResourcePool<BufferResource, BufferHandle>; 
 using TexturePool = ResourcePool<TextureResource, TextureHandle>; 
+using SamplerPool = ResourcePool<SamplerResource, SamplerHandle>; 

@@ -14,14 +14,17 @@ public:
 
     BufferHandle create_buffer(const BufferDesc& desc);
     TextureHandle create_texture(const TextureDesc& desc);
+    SamplerHandle create_sampler(const SamplerDesc& desc);
 
     BufferResource* get_buffer(BufferHandle handle);
     TextureResource* get_texture(TextureHandle handle);
+    SamplerResource* get_sampler(SamplerHandle handle);
 
     VkDeviceAddress get_buffer_address(BufferHandle handle);
    
     void destroy_buffer(BufferHandle handle);
     void destroy_texture(TextureHandle handle);
+    void destroy_sampler(SamplerHandle handle);
 private:
     VkDeviceAddress _get_buffer_address(BufferResource* resource);
 
@@ -30,6 +33,7 @@ private:
 
     BufferPool m_buffers;
     TexturePool m_textures;
+    SamplerPool m_samplers;
 
     friend class DescriptorHeapAllocator;
 };

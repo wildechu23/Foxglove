@@ -1,5 +1,10 @@
 #include "foxglove/resources/upload_manager.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
+
+#include <fastgltf/glm_element_traits.hpp>
+
 #include <iostream>
 #include <cstring>
 
@@ -75,13 +80,121 @@ UploadJobHandle UploadManager::upload_data(const void* data, size_t size,
 
     UploadJobHandle handle(m_next_handle_id++, 0);
     
-    m_pending_uploads[handle] = {
-        .src = staging_handle,
-        .dst = dst,
-        .size = size,
+    m_pending_uploads[handle] = PendingUpload{
+        staging_handle,
+        BufferUploadInfo {
+            .dst = dst,
+            .size = size
+        }
     };
 
     return handle;
+}
+
+
+UploadJobHandle UploadManager::upload_data(const void* data, VkExtent3D extent, 
+        TextureHandle dst) {	
+    size_t data_size = extent.depth * extent.width * extent.height * 4;
+    BufferHandle staging_handle = m_rm.create_buffer({
+        .size = data_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .memory_usage = VMA_MEMORY_USAGE_CPU_ONLY,
+        .allocation_flags = VMA_ALLOCATION_CREATE_MAPPED_BIT
+    });
+
+    BufferResource* staging = m_rm.get_buffer(staging_handle);
+    memcpy(staging->mapped_data, data, data_size);
+
+    UploadJobHandle handle(m_next_handle_id++, 0);
+    
+    m_pending_uploads[handle] = {
+        staging_handle,
+        TextureUploadInfo {
+            .dst = dst,
+            .extent = extent
+        }
+    };
+
+    return handle;
+
+
+}
+
+void UploadManager::transition_images(std::vector<TextureHandle>& handles) {
+    std::vector<VkImageMemoryBarrier2> barriers;
+
+    for(TextureHandle h : handles) {
+        TextureResource* dst_ptr = m_rm.get_texture(h);
+
+        barriers.emplace_back(VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext = nullptr,
+            .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .dstAccessMask = VK_ACCESS_2_NONE,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .image = dst_ptr->image,
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS
+            }
+        });
+    }
+
+    VkDependencyInfo dep_info {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext = nullptr,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+        .pImageMemoryBarriers = barriers.data()
+    };
+
+    vkCmdPipelineBarrier2(m_cmd_buffer, &dep_info);
+}
+
+void UploadManager::copy_buffer(BufferHandle src, BufferHandle dst,
+        uint32_t size) {
+    VkBufferCopy copy_region = {
+        .srcOffset = 0,
+        .dstOffset = 0,
+        .size = size
+    };
+
+    BufferResource* src_ptr = m_rm.get_buffer(src);
+    BufferResource* dst_ptr = m_rm.get_buffer(dst);
+
+    vkCmdCopyBuffer(m_cmd_buffer,
+            src_ptr->buffer,
+            dst_ptr->buffer,
+            1, &copy_region);
+}
+
+void UploadManager::copy_buffer_to_texture(BufferHandle src, TextureHandle dst, 
+        VkExtent3D extent) {
+    BufferResource* src_ptr = m_rm.get_buffer(src);
+    TextureResource* dst_ptr = m_rm.get_texture(dst);
+
+    VkBufferImageCopy copy_region = {
+        .bufferOffset = 0,
+        .bufferRowLength = 0,
+        .bufferImageHeight = 0,
+        .imageSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        },
+        .imageExtent = extent
+    };
+
+    // copy the buffer into the image
+    vkCmdCopyBufferToImage(m_cmd_buffer, src_ptr->buffer, dst_ptr->image, 
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    
 }
 
 
@@ -89,31 +202,30 @@ void UploadManager::submit_batch() {
     if(m_pending_uploads.empty()) return;
     std::cout << m_pending_uploads.size() << std::endl;
 
-     VkCommandBufferBeginInfo begin_info = {
+    VkCommandBufferBeginInfo begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     };
     vkBeginCommandBuffer(m_cmd_buffer, &begin_info);
+    
+
+    std::vector<TextureHandle> dst_textures;
+    for(auto [handle, upload] : m_pending_uploads) {
+        if(upload.is_texture()) {
+            const TextureUploadInfo& tex_info = upload.as_texture();
+            dst_textures.push_back(tex_info.dst);
+        }
+    }
+    transition_images(dst_textures);
 
     for(auto [handle, upload] : m_pending_uploads) {
-        VkBufferCopy copy_region = {
-            .srcOffset = 0,
-            .dstOffset = 0,
-            .size = upload.size
-        };
-        
-        BufferResource* src = m_rm.get_buffer(upload.src);
-        BufferResource* dst = m_rm.get_buffer(upload.dst);
-        
-        /*
-        std::cout << "src: " << src << std::endl;
-        std::cout << "dst: " << dst << std::endl;
-        */
-    
-        vkCmdCopyBuffer(m_cmd_buffer,
-                src->buffer,
-                dst->buffer,
-                1, &copy_region);
+        if(upload.is_buffer()) {            
+            const BufferUploadInfo& buf_info = upload.as_buffer();
+            copy_buffer(upload.src, buf_info.dst, buf_info.size);
+        } else if(upload.is_texture()) {
+            const TextureUploadInfo& tex_info = upload.as_texture();
+            copy_buffer_to_texture(upload.src, tex_info.dst, tex_info.extent); 
+        }
 
         m_in_flight[handle] = {
             .batch_id = m_next_value,

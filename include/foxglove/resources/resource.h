@@ -9,6 +9,7 @@
 
 using BufferHandle = TaggedHandle<ResourceType::Buffer>;
 using TextureHandle = TaggedHandle<ResourceType::Texture>;
+using SamplerHandle = TaggedHandle<ResourceType::Sampler>;
 
 // Resources
 // TODO: MOVE OUT IMPLEMENTATION?
@@ -193,5 +194,35 @@ public:
         }
 
         return aspect_mask;
+    }
+};
+
+
+class SamplerResource {
+public:
+    SamplerResource() = default;
+    SamplerResource(VkDevice device, const SamplerDesc& desc) {
+        create(device, desc);
+    }
+
+
+    VkSampler sampler;
+
+    void create(VkDevice device, const SamplerDesc& desc) {
+        VkSamplerCreateInfo sampler_info = { 
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .pNext = nullptr,
+            .magFilter = desc.mag_filter,
+            .minFilter = desc.min_filter,
+            .mipmapMode = desc.mipmap_mode,
+            .minLod = desc.min_lod,
+            .maxLod = desc.max_lod
+        };
+
+        vkCreateSampler(device, &sampler_info, nullptr, &sampler);
+    }
+
+    void destroy(VkDevice device) {
+        vkDestroySampler(device, sampler, nullptr);
     }
 };

@@ -27,20 +27,24 @@ int main() {
     
     // load meshes
     Loader loader(*rm, *um);
-    std::vector<std::shared_ptr<MeshData>> mesh = 
+    std::shared_ptr<LoadedGLTF> gltf = 
         loader.load_gltf_meshes(src_dir/"assets/basicmesh.glb").value();
-    MeshData& mesh0 = *mesh[2];
+    MeshData& mesh0 = *(gltf->meshes["Suzanne"]);
     
 
-    ComputeShader* shader = sl.create_compute_shader(
+    ComputeShader* gradient_shader = sl.create_compute_shader(
             fs::path("shaders/gradient_heap.comp.spv"));
+    ComputeShader* blur_shader = sl.create_compute_shader(
+            fs::path("shaders/radial_blur.comp.spv"));
+
 
     VertexShader* vert = sl.create_vertex_shader(
             fs::path("shaders/colored_triangle_mesh.vert.spv"));
     FragmentShader* frag = sl.create_fragment_shader(
             fs::path("shaders/colored_triangle.frag.spv"));
 
-    ComputePipeline* background = pm.get_compute_pipeline(shader);
+    ComputePipeline* background = pm.get_compute_pipeline(gradient_shader);
+    ComputePipeline* blur = pm.get_compute_pipeline(blur_shader);
     
     // TODO: simplify gcb and change draw_image_usages
     GraphicsConfigBuilder gcb;
@@ -62,9 +66,7 @@ int main() {
         .extent = {width, height},
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
         .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            | VK_IMAGE_USAGE_TRANSFER_DST_BIT
             | VK_IMAGE_USAGE_STORAGE_BIT
-            | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
     });
 
     TextureHandle depth_image_r = rm->create_texture(TextureDesc{
@@ -76,6 +78,15 @@ int main() {
     FrameGraph& fg = renderer->get_fg();
     while(!engine.window()->should_close()) {
         engine.begin_frame();
+        
+        FGTextureHandle fake_image = fg.create_texture("fake image", 
+            TextureDesc{
+                .extent = {width, height},
+                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                .usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT
+                | VK_IMAGE_USAGE_STORAGE_BIT
+                | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            });
 
         glm::mat4 view = engine.camera()->get_view_matrix();
         glm::mat4 projection = engine.camera()->get_projection_matrix();
@@ -88,7 +99,6 @@ int main() {
             .world_matrix = projection * view,
             .vertex_buffer = rm->get_buffer_address(mesh0.vertex_buffer)
         };
-
         FGBufferHandle mesh_i = fg.register_external_buffer(
                 "mesh index buffer", mesh0.index_buffer);
         FGTextureHandle draw_image = fg.register_external_texture(
@@ -97,21 +107,22 @@ int main() {
                 "depth image", depth_image_r);
         
         fg.create_pass("test", PassType::Clear)
-            .clear_color(draw_image, Color{0.3f, 0.5f, 0.7f, 1.f})
+            .clear_color(fake_image, Color{0.7f, 0.5f, 0.7f, 1.f})
             .build();
-        
+        /* 
         fg.create_pass("compute", PassType::Compute)
-            .bind_texture(draw_image, TextureUsage::StorageImage,
+            .bind_texture(fake_image, TextureUsage::StorageImage,
                     ResourceAccess::ReadWrite, 0)
             .execute([&](PassContext ctx) {
                 ctx.bind_compute_pipeline(background);
-                ctx.dispatch_compute(16, 16, 1);
+                ctx.dispatch_compute(std::ceil(1280/16.0),
+                        std::ceil(720/16.0), 1);
             })
             .build();
-            
-        
+        */
+         
         fg.create_pass("triangle", PassType::Graphics)
-            .bind_color_attachment(draw_image, 
+            .bind_color_attachment(fake_image, 
                     LoadOp::Load, StoreOp::Store)
             .bind_depth_attachment(depth_image,
                     LoadOp::Clear, StoreOp::Store, 0.f)
@@ -123,6 +134,33 @@ int main() {
                         mesh0.surfaces[0].count, 1,
                         mesh0.surfaces[0].start_index, 0, 0
                     );
+            })
+            .build();
+            
+        struct BlurPushConstant {
+            glm::vec2 center;
+            float start;
+            float strength;
+            int samples;
+        };
+        BlurPushConstant bpc = {
+            .center = { 0.5, 0.5 },
+            .start = 1.f,
+            .strength = 0.05f,
+            .samples = 10
+        };
+
+        // Add post-processing shader
+        fg.create_pass("blur", PassType::Compute)
+            .bind_texture(fake_image, TextureUsage::StorageImage,
+                    ResourceAccess::Read, 0)
+            .bind_texture(draw_image, TextureUsage::StorageImage,
+                    ResourceAccess::Write, 1)
+            .execute([&](PassContext ctx) {
+                ctx.bind_compute_pipeline(blur);
+                ctx.push_constant(bpc, 8);
+                ctx.dispatch_compute(std::ceil(1280/16.0),
+                        std::ceil(720/16.0), 1);
             })
             .build();
         

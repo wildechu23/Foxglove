@@ -18,3 +18,12 @@ struct BufferDesc {
     VmaAllocationCreateFlags allocation_flags = 0;
     // ... other properties
 };
+
+// TODO: add other properties of VkSamplerCreateInfo
+struct SamplerDesc {
+    VkFilter mag_filter;
+    VkFilter min_filter;
+    VkSamplerMipmapMode mipmap_mode;
+    float min_lod;
+    float max_lod;
+};

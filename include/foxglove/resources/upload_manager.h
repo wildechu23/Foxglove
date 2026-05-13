@@ -7,6 +7,8 @@
 #include "foxglove/resources/resource.h"
 #include "foxglove/resources/resource_manager.h"
 
+#include <variant>
+
 using UploadJobHandle = TaggedHandle<JobType::Upload>; 
 
 class UploadManager {
@@ -18,7 +20,8 @@ public:
 
     UploadJobHandle upload_data(const void* data, size_t size, 
             BufferHandle dst);
-    void copy_buffer(BufferHandle src, BufferHandle dst);
+    UploadJobHandle upload_data(const void* data, VkExtent3D extent, 
+            TextureHandle dst);
 
     void submit_batch();
     void process_completions();
@@ -27,6 +30,12 @@ public:
 
 private:
     uint64_t get_completed_batch_id();
+
+    void transition_images(std::vector<TextureHandle>& handles);
+
+    void copy_buffer(BufferHandle src, BufferHandle dst, uint32_t size);
+    void copy_buffer_to_texture(BufferHandle src, TextureHandle dst, 
+            VkExtent3D extent);
 
     VkDevice m_device;
     VmaAllocator m_allocator;
@@ -40,10 +49,33 @@ private:
     
     VkSemaphore m_timeline_semaphore;
 
-    struct PendingUpload {
-        BufferHandle src;
+    struct BufferUploadInfo {
         BufferHandle dst;
         size_t size;
+    };
+
+    struct TextureUploadInfo {
+        TextureHandle dst;
+        VkExtent3D extent;
+    };
+
+    struct PendingUpload {
+        BufferHandle src;
+        std::variant<BufferUploadInfo, TextureUploadInfo> info;
+
+        bool is_buffer() const { 
+            return std::holds_alternative<BufferUploadInfo>(info); 
+        }
+        bool is_texture() const { 
+            return std::holds_alternative<TextureUploadInfo>(info);
+        }
+
+        const BufferUploadInfo& as_buffer() const { 
+            return std::get<BufferUploadInfo>(info); 
+        }
+        const TextureUploadInfo& as_texture() const { 
+            return std::get<TextureUploadInfo>(info);
+        }
     };
 
     struct InFlightUpload {

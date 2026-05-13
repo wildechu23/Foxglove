@@ -41,7 +41,7 @@ GraphicsContext& GraphicsContext::push_constants(const void* data,
 */
 
 // TODO: UTIL ALIGN FUNC
-GraphicsContext& GraphicsContext::push_constants(const void* data,
+GraphicsContext& GraphicsContext::push_constant(const void* data,
         size_t size, uint32_t offset) {
     VkPushDataInfoEXT push_data_info = {
         .sType = VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT,

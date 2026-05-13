@@ -59,11 +59,13 @@ struct SectionInfo {
 struct BufferDescriptorInfo {
     BufferHandle resource;
     BufferUsage usage;
+    bool transient;
 };
 
 struct TextureDescriptorInfo {
     TextureHandle resource;
     TextureUsage usage;
+    bool transient;
 };
 
 
@@ -107,11 +109,27 @@ public:
     // update once a frame?
     void write_pending();
     void bind_descriptor_heap(VkCommandBuffer cmd);
+
+    void free_handle(Handle h) {
+        auto itr = handle_to_slot.find(h);
+        if(itr == handle_to_slot.end()) return;
+        uint32_t idx = itr->second;
+
+        free_slots.push_back(idx);
+        handle_to_slot.erase(itr);
+    }
 private:
     uint32_t allocate_section(Handle handle, uint32_t section);
 
     uint32_t get_free_slot() {
+        if(!free_slots.empty()) {
+            uint32_t idx = free_slots.back();
+            free_slots.pop_back();
+            return idx;
+        }
+
         slots.emplace_back();
+
         return slots.size() - 1;
     }
 
@@ -126,8 +144,9 @@ private:
 
     std::vector<BufferDescriptorInfo> buffers;
     std::vector<TextureDescriptorInfo> textures;
-    
+   
     std::vector<Slot> slots;
+    std::vector<uint32_t> free_slots;
     std::unordered_map<Handle, uint32_t> handle_to_slot;
     
     uint8_t* heap_address;

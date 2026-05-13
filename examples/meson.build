@@ -4,7 +4,7 @@ testexe = executable('testexe',
   'main.cpp',
   include_directories: inc,
   link_with: foxglove,
-  dependencies: [vulkan_dep, third_party_deps], 
+  dependencies: [library_deps, third_party_deps], 
   sources: spirv_targets,
 )
 

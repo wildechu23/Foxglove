@@ -14,7 +14,8 @@ layout(push_constant) uniform PushConstants {
 
 #define IMAGE Textures[pc.image_index]
 
-void main() {    
+
+void main() {   
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 size = imageSize(IMAGE);
 
@@ -31,3 +32,21 @@ void main() {
         imageStore(IMAGE, texelCoord, color);
     }
 }
+
+/*
+void main() {
+    ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(IMAGE);
+    
+    if (coord.x < size.x && coord.y < size.y) {
+        // Perfect continuous gradient - NO squares possible
+        vec4 color = vec4(
+            float(coord.x) / float(size.x),
+            float(coord.y) / float(size.y),
+            0.5,
+            1.0
+        );
+        imageStore(IMAGE, coord, color);
+    }
+}
+*/

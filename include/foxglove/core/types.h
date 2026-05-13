@@ -10,7 +10,8 @@ struct Color {
 
 enum class ResourceType : uint8_t {
     Buffer = 1,
-    Texture = 2
+    Texture = 2,
+    Sampler = 3
 };
 
 

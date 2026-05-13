@@ -22,12 +22,12 @@ public:
 
     GraphicsContext& bind_index_buffer(FGBufferHandle handle, 
             VkDeviceSize offset = 0);
-    GraphicsContext& push_constants(const void* data, size_t size, 
+    GraphicsContext& push_constant(const void* data, size_t size, 
             uint32_t offset = 0);
     
     template<typename T>
     GraphicsContext& push_constant(const T& data, uint32_t offset = 0) {
-        return push_constants(&data, sizeof(T), offset);
+        return push_constant(&data, sizeof(T), offset);
     }
     
     // Draw commands

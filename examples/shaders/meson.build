@@ -10,6 +10,7 @@ glslc = find_program(
 )
 
 shader_sources = files([
+    'radial_blur.comp',
     'gradient.comp',
     'gradient_heap.comp',
     'colored_triangle.vert',

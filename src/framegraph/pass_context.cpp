@@ -143,13 +143,18 @@ void PassContext::update_descriptor_heap() {
     // IF WE'RE USING HEAP, BIND ALL DESCRIPTORS TO SET 0, USE BINDING NUM
     size_t total_bindings = bindings.buffers.size() + bindings.textures.size();
 
+    std::vector<Handle> transient;
     for(const BufferBinding& bb : bindings.buffers) {
         FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
         if(!heap.has_resource(fg_buffer->get_resource())) {
             buffers.push_back({
                 fg_buffer->get_resource(),
-                bb.usage
+                bb.usage,
+                fg_buffer->is_transient()
             });
+            if(fg_buffer->is_transient()) {
+                transient.push_back(fg_buffer->get_resource());
+            }
         }
     }
 
@@ -158,8 +163,12 @@ void PassContext::update_descriptor_heap() {
         if(!heap.has_resource(fg_texture->get_resource())) {
             textures.push_back({
                 fg_texture->get_resource(),
-                tb.usage
+                tb.usage,
+                fg_texture->is_transient()
             });
+            if(fg_texture->is_transient()) {
+                transient.push_back(fg_texture->get_resource());
+            }
         }
     }
 
@@ -185,11 +194,33 @@ void PassContext::update_descriptor_heap() {
         .offset = 0,
         .data = {
             .address = push_data.data(),
-            .size = align_up(push_data.size(), 4)
+            .size = align_up(push_data.size() * sizeof(uint32_t), 4)
         }
     };
 
     m_ctx->vkCmdPushDataEXT(m_cmd, &push_data_info);
-    heap.bind_descriptor_heap(m_cmd); 
+    heap.bind_descriptor_heap(m_cmd);
+
+
+    m_fctx->get_deletion_queue().push_function([&heap, transient]() {
+        for(Handle h : transient) {
+            heap.free_handle(h);
+        }
+    });
+}
+
+void PassContext::push_constant(const void* data,
+        size_t size, uint32_t offset) {
+    VkPushDataInfoEXT push_data_info = {
+        .sType = VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT,
+        .pNext = NULL,
+        .offset = offset,
+        .data = {
+            .address = data,
+            .size = static_cast<uint32_t>(align_up(size, 4))
+        }
+    };
+
+    m_ctx->vkCmdPushDataEXT(m_cmd, &push_data_info);
 }
 
