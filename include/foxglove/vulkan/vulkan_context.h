@@ -29,6 +29,10 @@ public:
     // heap extension functions
 	PFN_vkWriteResourceDescriptorsEXT vkWriteResourceDescriptorsEXT{ nullptr };
     PFN_vkCmdBindResourceHeapEXT vkCmdBindResourceHeapEXT{nullptr };
+
+	PFN_vkWriteSamplerDescriptorsEXT vkWriteSamplerDescriptorsEXT{ nullptr };
+    PFN_vkCmdBindSamplerHeapEXT vkCmdBindSamplerHeapEXT{ nullptr };
+    
     PFN_vkCmdPushDataEXT vkCmdPushDataEXT{nullptr};
 private:
     bool bUseValidationLayers = true;

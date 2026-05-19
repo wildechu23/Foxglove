@@ -33,14 +33,18 @@ public:
 
     FGBufferHandle create_buffer(const std::string& name, BufferDesc desc);
     FGTextureHandle create_texture(const std::string& name, TextureDesc desc);
+    //FGSamplerHandle create_sampler(const std::string& name, SamplerDesc desc);
 
-    FGBufferHandle register_external_buffer(const std::string& name,
+    FGBufferHandle import_buffer(const std::string& name,
             BufferHandle resource);
-    FGTextureHandle register_external_texture(const std::string& name,
+    FGTextureHandle import_texture(const std::string& name,
             TextureHandle resource);
+    FGSamplerHandle import_sampler(const std::string& name,
+            SamplerHandle resource);
 
     FGBuffer* get_buffer(FGBufferHandle handle);
     FGTexture* get_texture(FGTextureHandle handle);
+    FGSampler* get_sampler(FGSamplerHandle handle);
 
     PassBuilder create_pass(const std::string& name, PassType type);
 
@@ -65,10 +69,12 @@ private:
     
     FGBufferRegistry m_buffers;
     FGTextureRegistry m_textures;
+    FGSamplerRegistry m_samplers;
     ResourceManager* m_rm;
 
     std::vector<FGBufferHandle> m_external_buffers;
     std::vector<FGTextureHandle> m_external_textures;
+    std::vector<FGSamplerHandle> m_external_samplers;
     
     //DescriptorAllocator m_desc_allocator;
 

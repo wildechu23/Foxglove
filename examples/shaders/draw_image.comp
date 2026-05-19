@@ -1,0 +1,40 @@
+#version 460
+
+#extension GL_EXT_descriptor_heap : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout(descriptor_heap, rgba16f) uniform image2D images[];
+
+layout(push_constant, std430) uniform PushConstants {
+    int input_idx;
+    int output_idx;
+
+    ivec2 src_offset;
+    ivec2 dst_offset;
+    ivec2 extent;
+} pc;
+
+
+#define INPUT_IMAGE images[pc.input_idx]
+#define OUTPUT_IMAGE images[pc.output_idx]
+
+void main() {    
+    ivec2 g_id = ivec2(gl_GlobalInvocationID.xy);
+
+    ivec2 extent = pc.extent;
+    if(extent == vec2(0.f, 0.f)) {
+        extent = imageSize(INPUT_IMAGE);
+    }
+    
+    if (g_id.x >= extent.x || g_id.y >= extent.y)
+        return;
+
+
+    ivec2 src_coord = g_id + pc.src_offset;
+    ivec2 dst_coord = g_id + pc.dst_offset;
+
+    vec4 color = imageLoad(INPUT_IMAGE, src_coord);
+    imageStore(OUTPUT_IMAGE, dst_coord, color);
+}

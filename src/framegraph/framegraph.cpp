@@ -35,17 +35,35 @@ FGTextureHandle FrameGraph::create_texture(const std::string& name,
     return m_textures.create(name, desc);
 }
 
-FGBufferHandle FrameGraph::register_external_buffer(const std::string& name,
+/* TODO: AVOID THIS, PREFER REGISTERING EXTERNAL
+ * Removed 
+FGSamplerHandle FrameGraph::create_sampler(const std::string& name,
+        SamplerDesc desc) {
+    return m_samplers.create(name, desc);
+}*/
+
+FGBufferHandle FrameGraph::import_buffer(const std::string& name,
         BufferHandle resource) {
-    FGBufferHandle handle = m_buffers.create(name, resource);
+    BufferResource* r = m_rm->get_buffer(resource);
+    FGBufferHandle handle = m_buffers.create(name, resource,
+            r->last_usage, r->last_access);
     m_external_buffers.push_back(handle);
     return handle;
 }
 
-FGTextureHandle FrameGraph::register_external_texture(const std::string& name, 
+FGTextureHandle FrameGraph::import_texture(const std::string& name, 
         TextureHandle resource) {
-    FGTextureHandle handle = m_textures.create(name, resource);
+    TextureResource* r = m_rm->get_texture(resource);
+    FGTextureHandle handle = m_textures.create(name, resource,
+            r->last_usage, r->last_access);
     m_external_textures.push_back(handle);
+    return handle;
+}
+
+FGSamplerHandle FrameGraph::import_sampler(const std::string& name, 
+        SamplerHandle resource) {
+    FGSamplerHandle handle = m_samplers.create(name, resource);
+    m_external_samplers.push_back(handle);
     return handle;
 }
 
@@ -55,6 +73,10 @@ FGBuffer* FrameGraph::get_buffer(FGBufferHandle handle) {
 
 FGTexture* FrameGraph::get_texture(FGTextureHandle handle) {
     return m_textures.get(handle);
+}
+
+FGSampler* FrameGraph::get_sampler(FGSamplerHandle handle) {
+    return m_samplers.get(handle);
 }
 
 PassBuilder FrameGraph::create_pass(const std::string& name, PassType type) {
@@ -146,6 +168,8 @@ void FrameGraph::build_dependencies() {
                 add_pass_dependency(last, pass);
             }
         });
+        
+        // TODO: ADD SAMPLER
     }
 
     // TODO: CULL
@@ -203,9 +227,11 @@ void FrameGraph::collect_descriptors() {
 */
 
 void FrameGraph::allocate_resources(FrameContext& fctx) {
+    // Note samplers are absent from transient resources
     // first collect
     std::vector<FGBuffer*> transient_buffers;
     std::vector<FGTexture*> transient_textures;
+    std::vector<FGSampler*> transient_samplers;
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
         
@@ -249,6 +275,7 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
             m_rm->destroy_texture(resource);
         });
     }
+    
 
     // can set pointers now
     for(FGBuffer* buffer : transient_buffers) {
@@ -268,6 +295,11 @@ void FrameGraph::allocate_resources(FrameContext& fctx) {
     for(FGTextureHandle handle : m_external_textures) {
         FGTexture* texture = get_texture(handle);
         texture->set_resource_ptr(m_rm->get_texture(texture->get_resource()));
+    }
+
+    for(FGSamplerHandle handle : m_external_samplers) {
+        FGSampler* sampler = get_sampler(handle);
+        sampler->set_resource_ptr(m_rm->get_sampler(sampler->get_resource()));
     }
 }
 
@@ -325,6 +357,7 @@ void FrameGraph::collect_pass_barriers() {
 
 
 // Unreal uses a transition_create_queue, added to by add_x_barrier
+// Updates image layout
 void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
     for(size_t i = 0; i < m_passes.size(); i++) {
         Pass* pass = m_passes[i].get();
@@ -381,7 +414,9 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             } else {
                 aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
             }
-            //std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
+            std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
+            //std::cout << texture->get_name() << ": " << tr->image << std::endl;
+
 
             VkImageMemoryBarrier2 img_b = {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -403,7 +438,6 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
                     .layerCount = VK_REMAINING_ARRAY_LAYERS
                 }
             };
-
 
             pass->add_vk_image_barrier(img_b);
         }
@@ -482,7 +516,8 @@ VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
         const DepthAttachment& da = info.depth_attachment.value();
         TextureResource* depth_texture = get_texture(da.handle)
             ->get_resource_ptr();
-
+        
+        // TODO: CHECK IF I CAN USE RESOURCES LAYOUT
         VkImageLayout layout = info.is_combined() 
             ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
             : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -510,6 +545,7 @@ VkRenderingInfo FrameGraph::get_rendering_info(GraphicsPass* pass) {
         TextureResource* stencil_texture = get_texture(sa.handle)
             ->get_resource_ptr();
         
+        // TODO: CHECK IF I CAN USE RESOURCES LAYOUT
         VkImageLayout layout = info.is_combined() 
             ? VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL
             : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -598,13 +634,29 @@ void FrameGraph::execute(FrameContext& fctx) {
 }
 
 
-// dont delete right away, send to deletion queue
 void FrameGraph::reset() {
+
+    for(FGBufferHandle h : m_external_buffers) {
+        FGBuffer* buffer = get_buffer(h);
+        BufferResource* r = buffer->get_resource_ptr();
+        r->last_usage = buffer->get_usage();
+        r->last_access = buffer->get_access();
+    }
+
+    for(FGTextureHandle h : m_external_textures) {
+        FGTexture* texture = get_texture(h);
+        TextureResource* r = texture->get_resource_ptr();
+        r->last_usage = texture->get_usage();
+        r->last_access = texture->get_access();
+    }
     m_buffers.reset();
     m_textures.reset();
+    m_samplers.reset();
+
     m_passes.clear();
 
     m_external_buffers.clear();
     m_external_textures.clear();
+    m_external_samplers.clear();
 }
 

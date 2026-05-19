@@ -116,8 +116,6 @@ UploadJobHandle UploadManager::upload_data(const void* data, VkExtent3D extent,
     };
 
     return handle;
-
-
 }
 
 void UploadManager::transition_images(std::vector<TextureHandle>& handles) {
@@ -144,6 +142,8 @@ void UploadManager::transition_images(std::vector<TextureHandle>& handles) {
                 .layerCount = VK_REMAINING_ARRAY_LAYERS
             }
         });
+        dst_ptr->last_usage = TextureUsage::TransferDst;
+        dst_ptr->last_access = ResourceAccess::Write;
     }
 
     VkDependencyInfo dep_info {
@@ -171,6 +171,9 @@ void UploadManager::copy_buffer(BufferHandle src, BufferHandle dst,
             src_ptr->buffer,
             dst_ptr->buffer,
             1, &copy_region);
+
+    dst_ptr->last_usage = BufferUsage::TransferDst;
+    dst_ptr->last_access = ResourceAccess::Write;
 }
 
 void UploadManager::copy_buffer_to_texture(BufferHandle src, TextureHandle dst, 

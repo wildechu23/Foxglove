@@ -55,6 +55,10 @@ struct TextureBinding {
     uint32_t binding;
 };
 
+struct SamplerBinding {
+    FGSamplerHandle handle;
+    uint32_t binding;
+};
 
 enum class PassType {
     Graphics,
@@ -88,6 +92,14 @@ struct BindingGroup {
     uint32_t set;
     std::vector<BufferBinding> buffers;
     std::vector<TextureBinding> textures;
+    std::vector<SamplerBinding> samplers;
+
+    size_t size() const {
+        return buffers.size() + textures.size() + samplers.size();
+    }
+
+    bool has_resource() const { return !(buffers.empty() && textures.empty()); } 
+    bool has_sampler() const { return !samplers.empty(); } 
 };
 
 class PassDesc {
@@ -149,13 +161,18 @@ public:
     const std::string& get_name() const { return m_desc.get_name(); }
 
     void enumerate_buffers(std::function<void(const BufferBinding&)> fn) const {
-        const BindingGroup& g = m_desc.get_bindings();
+        const BindingGroup& g = get_bindings();
         for(const BufferBinding& bb : g.buffers) fn(bb);
     }
 
     virtual void enumerate_textures(std::function<void(const TextureBinding&)> fn) const {
-        const BindingGroup& g = m_desc.get_bindings();
+        const BindingGroup& g = get_bindings();
         for(const TextureBinding& tb : g.textures) fn(tb);
+    }
+
+    void enumerate_samplers(std::function<void(const SamplerBinding&)> fn) const {
+        const BindingGroup& g = get_bindings();
+        for(const SamplerBinding& sb : g.samplers) fn(sb);
     }
     
     const BindingGroup& get_bindings() const {

@@ -139,53 +139,70 @@ void PassContext::update_descriptor_heap() {
     
     std::vector<BufferDescriptorInfo> buffers;
     std::vector<TextureDescriptorInfo> textures;
-
-    // IF WE'RE USING HEAP, BIND ALL DESCRIPTORS TO SET 0, USE BINDING NUM
-    size_t total_bindings = bindings.buffers.size() + bindings.textures.size();
-
-    std::vector<Handle> transient;
+    std::vector<SamplerDescriptorInfo> samplers;
+    
+    // TODO: CAN I JUST PUSH KEY
     for(const BufferBinding& bb : bindings.buffers) {
         FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
-        if(!heap.has_resource(fg_buffer->get_resource())) {
+        BufferKey key = {
+            fg_buffer->get_resource(),
+            bb.usage,
+        };
+        if(!heap.has_resource(key)) {
             buffers.push_back({
                 fg_buffer->get_resource(),
                 bb.usage,
                 fg_buffer->is_transient()
             });
-            if(fg_buffer->is_transient()) {
-                transient.push_back(fg_buffer->get_resource());
-            }
         }
     }
 
     for(const TextureBinding& tb : bindings.textures) {
         FGTexture* fg_texture = m_fg->get_texture(tb.handle);
-        if(!heap.has_resource(fg_texture->get_resource())) {
+        TextureKey key = {
+            fg_texture->get_resource(),
+            tb.usage,
+            tb.access,
+        };
+        if(!heap.has_resource(key)) {
+            std::cout << "ADDING DESC FOR " << fg_texture->get_name()
+                << std::endl;
             textures.push_back({
                 fg_texture->get_resource(),
                 tb.usage,
+                tb.access,
                 fg_texture->is_transient()
             });
-            if(fg_texture->is_transient()) {
-                transient.push_back(fg_texture->get_resource());
-            }
         }
     }
 
-    heap.add_descriptors(buffers, textures);
+    for(const SamplerBinding& sb : bindings.samplers) {
+        FGSampler* fg_sampler = m_fg->get_sampler(sb.handle);
+        if(!heap.has_resource(fg_sampler->get_resource())) {
+            samplers.push_back({ fg_sampler->get_resource() });
+        }
+    }
+
+    heap.add_descriptors(buffers, textures, samplers);
     heap.write_pending();
 
     // now write into data the size of total_bindings * uint32_t
-    std::vector<uint32_t> push_data(total_bindings);
+    std::vector<uint32_t> push_data(bindings.size());
     
     for(const BufferBinding& bb : bindings.buffers) {
         BufferHandle handle = m_fg->get_buffer(bb.handle)->get_resource();
-        push_data[bb.binding] = heap.get_index(handle);
+        push_data[bb.binding] = heap.get_index({handle, bb.usage});
     }
 
     for(const TextureBinding& tb : bindings.textures) {
         TextureHandle handle = m_fg->get_texture(tb.handle)->get_resource();
-        push_data[tb.binding] = heap.get_index(handle);
+        push_data[tb.binding] = heap.get_index({handle, 
+                tb.usage, tb.access});
+    }
+
+    for(const SamplerBinding& sb : bindings.samplers) {
+        SamplerHandle handle = m_fg->get_sampler(sb.handle)->get_resource();
+        push_data[sb.binding] = heap.get_index(handle);
     }
 
     VkPushDataInfoEXT push_data_info = {
@@ -199,16 +216,30 @@ void PassContext::update_descriptor_heap() {
     };
 
     m_ctx->vkCmdPushDataEXT(m_cmd, &push_data_info);
-    heap.bind_descriptor_heap(m_cmd);
+    
+    if(bindings.has_resource()) heap.bind_resource_heap(m_cmd);
+    if(bindings.has_sampler()) heap.bind_sampler_heap(m_cmd);
 
-
-    m_fctx->get_deletion_queue().push_function([&heap, transient]() {
-        for(Handle h : transient) {
-            heap.free_handle(h);
+    for(BufferDescriptorInfo& info : buffers) {
+        if(info.transient) {
+            m_fctx->get_deletion_queue().push_function([&heap, info]() {
+                heap.free_resource({info.resource, info.usage});
+            });
         }
-    });
+    }
+    for(TextureDescriptorInfo& info : textures) {
+        if(info.transient) {
+            m_fctx->get_deletion_queue().push_function([&heap, info]() {
+                heap.free_resource({
+                    info.resource, info.usage, info.access
+                });
+            });
+        }
+    }
+
 }
 
+// TODO: for compute pass, maybe move to compute builder
 void PassContext::push_constant(const void* data,
         size_t size, uint32_t offset) {
     VkPushDataInfoEXT push_data_info = {

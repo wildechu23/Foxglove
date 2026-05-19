@@ -9,7 +9,7 @@ class HandleBase {
 public:
     uint64_t get_data() const { return m_data; }
 
-    static constexpr uint32_t INVALID = UINT32_MAX;
+    static constexpr uint64_t INVALID = UINT64_MAX;
     bool is_valid() const { return m_data != INVALID; }
 protected:
     constexpr HandleBase() : m_data(INVALID) {}

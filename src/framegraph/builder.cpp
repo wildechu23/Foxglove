@@ -39,6 +39,11 @@ PassBuilder& PassBuilder::bind_texture(FGTextureHandle handle,
     return *this;
 }
 
+PassBuilder& PassBuilder::bind_sampler(FGSamplerHandle handle, 
+        uint32_t binding) {
+    m_bindings.samplers.push_back({ handle, binding });
+    return *this;
+}
 /*
 PassBuilder& PassBuilder::bind_buffer(FGBufferHandle handle,
         BufferUsage usage, ResourceAccess access,

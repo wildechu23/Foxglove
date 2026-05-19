@@ -11,6 +11,37 @@ using BufferHandle = TaggedHandle<ResourceType::Buffer>;
 using TextureHandle = TaggedHandle<ResourceType::Texture>;
 using SamplerHandle = TaggedHandle<ResourceType::Sampler>;
 
+enum ResourceAccess {
+    None = 0,
+    Read = 1,
+    Write = 2,
+    ReadWrite = Read | Write
+};
+
+enum class BufferUsage {
+    Unknown,
+    StorageBuffer,
+    UniformBuffer,
+    VertexBuffer,
+    IndexBuffer,
+    TransferSrc,
+    TransferDst
+    // Accleration structure
+};
+
+enum class TextureUsage {
+    Unknown,
+    ColorAttachment,
+    DepthAttachment,
+    StencilAttachment,
+    DepthStencilAttachment,
+    InputAttachment,
+    SampledImage,
+    StorageImage,
+    TransferSrc,
+    TransferDst
+};
+
 // Resources
 // TODO: MOVE OUT IMPLEMENTATION?
 // MOVE TO VULKANBUFFERRESOURCE, KEEP GENERIC VERSION
@@ -26,6 +57,11 @@ public:
     VmaAllocation allocation;
     size_t size;
     void* mapped_data = nullptr;
+
+
+    // state
+    BufferUsage last_usage;
+    ResourceAccess last_access;
     
     void create(VkDevice device, VmaAllocator allocator, 
                 const BufferDesc& desc) {
@@ -72,17 +108,24 @@ public:
             const TextureDesc& desc) {
         create(device, allocator, desc);
     }
-
+    
+    // TODO: CONSIDER ADDING ACCESS AND USAGE HERE TO AVOID
+    // MORE TRANSITIONS
     VkImage image;
     VkImageView view = VK_NULL_HANDLE;
     VmaAllocation allocation;
-    
+
     // desc
     VkExtent2D extent;
     VkFormat format;
     VkImageUsageFlags usage;
     uint32_t mip_levels;
     uint32_t array_layers;
+
+
+    // state
+    TextureUsage last_usage;
+    ResourceAccess last_access;
     
     void create(VkDevice device, VmaAllocator allocator, 
                 const TextureDesc& desc) {
@@ -205,21 +248,22 @@ public:
         create(device, desc);
     }
 
-
     VkSampler sampler;
+    VkSamplerCreateInfo info;
 
     void create(VkDevice device, const SamplerDesc& desc) {
-        VkSamplerCreateInfo sampler_info = { 
+        info = { 
             .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
             .pNext = nullptr,
             .magFilter = desc.mag_filter,
             .minFilter = desc.min_filter,
             .mipmapMode = desc.mipmap_mode,
             .minLod = desc.min_lod,
-            .maxLod = desc.max_lod
+            .maxLod = desc.max_lod,
+            .unnormalizedCoordinates = VK_FALSE
         };
 
-        vkCreateSampler(device, &sampler_info, nullptr, &sampler);
+        vkCreateSampler(device, &info, nullptr, &sampler);
     }
 
     void destroy(VkDevice device) {

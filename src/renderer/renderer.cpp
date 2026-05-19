@@ -44,6 +44,7 @@ void Renderer::draw() {
     vkWaitForFences(device, 1, &fctx.get_render_fence(), true, UINT64_MAX);
     vkResetFences(device, 1, &fctx.get_render_fence());
 
+    // maybe save resources
 	fctx.get_deletion_queue().flush();
     
     uint32_t swapchain_image_idx;

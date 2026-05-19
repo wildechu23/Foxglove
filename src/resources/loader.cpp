@@ -107,19 +107,24 @@ std::optional<std::shared_ptr<LoadedGLTF>> Loader::load_gltf_meshes(
 
         file.samplers.push_back(sampler_h);
     }
-
+    
+    int idx = 0;
     for (fastgltf::Image& image : gltf.images) {
         std::optional<TextureHandle> img = load_image(gltf, image);
 
         if (img.has_value()) {
             images.push_back(*img);
-            file.images[std::string(image.name)] = *img;
+            std::string name = image.name == "" 
+                ? std::to_string(idx)
+                : std::string(image.name);
+            file.images[name] = *img;
         }
         else {
             //images.push_back(engine->_errorCheckerboardImage);
             std::cout << "gltf failed to load texture " 
                 << image.name << std::endl;
 		}
+        idx++;
 	}
 
     std::vector<uint32_t> indices;
@@ -250,7 +255,6 @@ std::optional<std::shared_ptr<LoadedGLTF>> Loader::load_gltf_meshes(
     // TODO: COMBINE TEXTURE JOBS INTO BATCH?
     m_um.submit_batch();
 
-    
     for(UploadJobHandle job : jobs) {
         m_um.wait_for_handle(job);
     }
@@ -267,6 +271,9 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
     TextureHandle new_image;
     int width, height, nrChannels;
 
+    UploadJobHandle job;
+    unsigned char* data;
+
     std::visit(fastgltf::visitor { [](auto& arg) {},
         [&](fastgltf::sources::URI& file_path) {
             assert(file_path.fileByteOffset == 0); // offsets not supported
@@ -275,7 +282,7 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
             const std::string path(file_path.uri.path().begin(),
                     file_path.uri.path().end()); 
             
-            unsigned char* data = stbi_load(path.c_str(), &width, &height, 
+            data = stbi_load(path.c_str(), &width, &height, 
                     &nrChannels, 4);
             if (!data) return;
 
@@ -292,19 +299,13 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
                 .extent = VkExtent2D{width_u, height_u},
                 .format = VK_FORMAT_R8G8B8A8_UNORM,
                 .usage = VK_IMAGE_USAGE_SAMPLED_BIT
+                       | VK_IMAGE_USAGE_TRANSFER_DST_BIT
             });
 
-            UploadJobHandle j1 = m_um.upload_data(data, image_extent, 
-                    new_image);
-
-            m_um.submit_batch();
-            m_um.wait_for_handle(j1);
-            m_um.process_completions();
-
-            stbi_image_free(data);   
+            job = m_um.upload_data(data, image_extent, new_image);
         },
-        [&](fastgltf::sources::Vector& vector) {
-            unsigned char* data = stbi_load_from_memory(
+        [&](fastgltf::sources::Array& vector) {
+            data = stbi_load_from_memory(
                     reinterpret_cast<const stbi_uc*>(vector.bytes.data()), 
                     static_cast<int>(vector.bytes.size()),
                     &width, &height, &nrChannels, 4);
@@ -323,17 +324,10 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
                 .extent = VkExtent2D{width_u, height_u},
                 .format = VK_FORMAT_R8G8B8A8_UNORM,
                 .usage = VK_IMAGE_USAGE_SAMPLED_BIT
+                       | VK_IMAGE_USAGE_TRANSFER_DST_BIT
             });
 
-            UploadJobHandle j1 = m_um.upload_data(data, image_extent, 
-                    new_image);
-            
-            m_um.submit_batch();
-            m_um.wait_for_handle(j1);
-            m_um.process_completions();
-            
-
-            stbi_image_free(data);
+            job = m_um.upload_data(data, image_extent, new_image);
         },
         [&](fastgltf::sources::BufferView& view) {
             auto& bufferView = asset.bufferViews[view.bufferViewIndex];
@@ -342,8 +336,8 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
             // We only care about VectorWithMime because LoadExternalBuffers
             // buffers are already loaded into a vector.
             std::visit(fastgltf::visitor { [](auto& arg) {},
-                [&](fastgltf::sources::Vector& vector) {
-                    unsigned char* data = stbi_load_from_memory(
+                [&](fastgltf::sources::Array& vector) {
+                    data = stbi_load_from_memory(
                             reinterpret_cast<const stbi_uc*>(vector.bytes.data() 
                                 + bufferView.byteOffset),
                             static_cast<int>(bufferView.byteLength),
@@ -364,22 +358,22 @@ std::optional<TextureHandle> Loader::load_image(fastgltf::Asset& asset,
                         .extent = VkExtent2D{width_u, height_u},
                         .format = VK_FORMAT_R8G8B8A8_UNORM,
                         .usage = VK_IMAGE_USAGE_SAMPLED_BIT
+                               | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+                               | VK_IMAGE_USAGE_STORAGE_BIT
                     });
 
-                    UploadJobHandle j1 = m_um.upload_data(data, image_extent, 
-                            new_image);
-
-                    m_um.submit_batch();
-                    m_um.wait_for_handle(j1);
-                    m_um.process_completions();
-
-
-                    stbi_image_free(data);
+                    job = m_um.upload_data(data, image_extent, new_image);
                 }}, buffer.data);
         },
     }, image.data);
 
-    if(m_rm.get_texture(new_image)->image == VK_NULL_HANDLE) {
+    m_um.submit_batch();
+    m_um.wait_for_handle(job);
+    m_um.process_completions();
+
+    stbi_image_free(data);   
+
+    if(m_rm.get_texture(new_image) == nullptr) {
         return std::nullopt;
     }
 

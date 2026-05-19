@@ -35,6 +35,7 @@ private:
     TexturePool m_textures;
     SamplerPool m_samplers;
 
+    friend class DescriptorHeap;
     friend class DescriptorHeapAllocator;
 };
 

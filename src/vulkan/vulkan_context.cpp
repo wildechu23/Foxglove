@@ -109,6 +109,13 @@ void VulkanContext::init(Window& window) {
     vkCmdBindResourceHeapEXT = 
         reinterpret_cast<PFN_vkCmdBindResourceHeapEXT>(
             vkGetDeviceProcAddr(m_device, "vkCmdBindResourceHeapEXT"));
+
+    vkWriteSamplerDescriptorsEXT =
+        reinterpret_cast<PFN_vkWriteSamplerDescriptorsEXT>(
+            vkGetDeviceProcAddr(m_device, "vkWriteSamplerDescriptorsEXT"));
+    vkCmdBindSamplerHeapEXT =
+        reinterpret_cast<PFN_vkCmdBindSamplerHeapEXT>(
+            vkGetDeviceProcAddr(m_device, "vkCmdBindSamplerHeapEXT"));
 }
 
 void VulkanContext::cleanup() {

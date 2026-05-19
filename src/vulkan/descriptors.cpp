@@ -40,7 +40,7 @@ VkDescriptorSetLayout DescriptorLayoutBuilder::build(
     return set;
 }
 
-
+/*
 void DescriptorAllocator::init_pool(
         VkDevice device, 
         uint32_t maxSets, 
@@ -112,11 +112,11 @@ std::vector<VkDescriptorSet> DescriptorAllocator::allocate(VkDevice device, std:
 
     return ds;
 }
+*/
 
 //
 // DescriptorHeapAllocator
 //
-
 
 void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
     m_ctx = ctx;
@@ -135,12 +135,17 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
 
     m_buffer_align = heap_props.bufferDescriptorAlignment;
     m_image_align = heap_props.imageDescriptorAlignment;
+    m_sampler_align = heap_props.samplerDescriptorAlignment;
 
-    m_reserved_size = heap_props.minResourceHeapReservedRange;
+    m_resource_reserved_size = heap_props.minResourceHeapReservedRange;
+    m_sampler_reserved_size = heap_props.minSamplerHeapReservedRange;
+
     m_buffer_descriptor_size = align_up(heap_props.bufferDescriptorSize,
             m_buffer_align);
     m_image_descriptor_size = align_up(heap_props.imageDescriptorSize,
             m_image_align);
+    m_sampler_descriptor_size = align_up(heap_props.samplerDescriptorSize,
+            m_sampler_align);
     
     uint32_t persistent_images = 50;
     uint32_t transient_images = 50;
@@ -149,6 +154,7 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
 
     uint32_t offset = 0;
 
+    std::vector<SectionInfo> sections;
     sections.resize(4);
 
     // Persistent images
@@ -189,69 +195,34 @@ void DescriptorHeapAllocator::init(VulkanContext* ctx, ResourceManager* rm) {
         .descriptor_size = m_buffer_descriptor_size,
         .alignment = m_buffer_align
     };
-
-    // heap_size
     offset += sections.back().size;
 
-    uint32_t heap_size = offset + m_reserved_size;
-    std::cout << heap_size << std::endl;
-        
-    BufferHandle rh_buffer = m_rm->create_buffer(BufferDesc{
-        .size = heap_size,
-        .usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT
-            | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-            | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        .memory_usage = VMA_MEMORY_USAGE_AUTO,
-        .allocation_flags = 
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-          | VMA_ALLOCATION_CREATE_MAPPED_BIT
-    });
+    uint32_t resource_heap_size = offset + m_resource_reserved_size;
+    m_resource_heap.init(sections, resource_heap_size, m_rm);
 
-    BufferResource* rh_resource = m_rm->get_buffer(rh_buffer); 
-
-    m_resource_heap = HeapInfo{
-        .handle = rh_buffer,
-        .mapped = rh_resource->mapped_data,
-        .address = m_rm->_get_buffer_address(rh_resource),
-        .size = heap_size,
-        .offset = 0
-    };
+    offset = 0;
     
-    heap_address = static_cast<uint8_t*>(m_resource_heap.mapped);
+    // sampler heap
+    std::vector<SectionInfo> sampler_sections(1);
+    sampler_sections[0] =  {
+        .start_offset = offset,
+        .size = 20 * m_sampler_descriptor_size,
+        .current_offset = 0,
+        .descriptor_size = m_sampler_descriptor_size,
+        .alignment = m_sampler_align
+    };
+    offset += sampler_sections[0].size;
 
-    // TODO: IGNORE SAMPLER HEAP FOR NOW
+    uint32_t sampler_heap_size = offset + m_sampler_reserved_size;
+    m_sampler_heap.init(sampler_sections, sampler_heap_size, m_rm);
 }
 
-uint32_t DescriptorHeapAllocator::allocate_section(Handle handle,
-        uint32_t section) {
-    SectionInfo& info = sections[section];
-
-    if(info.current_offset == info.start_offset + info.size) {
-        std::cerr << "full section" << std::endl; 
-        // for now
-        info.current_offset = 0;
-    } else if(info.current_offset > info.start_offset + info.size) {
-        std::cerr << "somehow offset unaligned" << std::endl;
-    }
-
-
-    uint32_t slot = get_free_slot();
-    
-    slots[slot] = {
-        .gen = slots[slot].gen + 1,
-        .type = ResourceType::Buffer, // TODO: NECESSARY?
-        .offset = info.start_offset + info.current_offset
-    };
-    
-    // offset is descriptor_size agnostic (pure offset)
-    info.current_offset += info.descriptor_size;
-    info.current_offset = align_up(info.current_offset, info.alignment);
-
-    handle_to_slot[handle] = slot;
-    return slot;
-}
- 
 void DescriptorHeapAllocator::write_pending() {
+    write_pending_resources();
+    write_pending_samplers();
+}
+
+void DescriptorHeapAllocator::write_pending_resources() {
     if(buffers.empty() && textures.empty()) return;
 
     std::vector<VkDeviceAddressRangeEXT> device_address_ranges;
@@ -267,12 +238,17 @@ void DescriptorHeapAllocator::write_pending() {
     image_view_infos.reserve(textures.size());
     image_descriptor_infos.reserve(textures.size());
 
+
     for(size_t i = 0; i < buffers.size(); ++i) {
         BufferDescriptorInfo info = buffers[i];
         BufferResource* resource = m_rm->get_buffer(info.resource);
         
         uint32_t section = info.transient ? 3 : 2;
-        uint32_t slot = allocate_section(info.resource, section);
+        uint32_t slot = buffer_manager.allocate_section(
+            m_resource_heap.get_section(section),
+            { info.resource, info.usage },
+            m_resource_heap.get_free_slot()
+        );
 
         device_address_ranges.push_back({
             .address = m_rm->_get_buffer_address(resource),
@@ -286,7 +262,8 @@ void DescriptorHeapAllocator::write_pending() {
         });
 
         host_address_ranges.push_back({
-            .address = heap_address + slots[slot].offset,
+            .address = m_resource_heap.get_address() 
+                       + m_resource_heap.slots[slot].offset,
             .size = m_buffer_descriptor_size
         });
     }
@@ -296,13 +273,17 @@ void DescriptorHeapAllocator::write_pending() {
         TextureResource* resource = m_rm->get_texture(info.resource);
 
         uint32_t section = info.transient ? 1 : 0;
-        uint32_t slot = allocate_section(info.resource, section);
+        uint32_t slot = texture_manager.allocate_section(
+            m_resource_heap.get_section(section),
+            { info.resource, info.usage, info.access },
+            m_resource_heap.get_free_slot()
+        );
         
         image_view_infos.push_back(resource->get_view_create_info());
         image_descriptor_infos.push_back({
             .sType = VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT,
             .pView = &image_view_infos.back(),
-            .layout = VK_IMAGE_LAYOUT_GENERAL
+            .layout = util::deduce_layout(info.usage),
         });
 
         resource_descriptor_infos.push_back({
@@ -312,11 +293,13 @@ void DescriptorHeapAllocator::write_pending() {
         });
 
         host_address_ranges.push_back({
-            .address = heap_address + slots[slot].offset,
+            .address = m_resource_heap.get_address() 
+                        + m_resource_heap.slots[slot].offset,
             .size = m_image_descriptor_size
         });
     }
-
+    
+    
     m_ctx->vkWriteResourceDescriptorsEXT(m_ctx->get_device(), 
         static_cast<uint32_t>(resource_descriptor_infos.size()),
         resource_descriptor_infos.data(), 
@@ -327,16 +310,67 @@ void DescriptorHeapAllocator::write_pending() {
     textures.clear();
 }
 
-void DescriptorHeapAllocator::bind_descriptor_heap(VkCommandBuffer cmd) {
-    VkBindHeapInfoEXT bind_heap_info{
+void DescriptorHeapAllocator::write_pending_samplers() {
+    if(samplers.empty()) return;
+
+    std::vector<VkSamplerCreateInfo> sampler_infos;
+    std::vector<VkHostAddressRangeEXT> sampler_host_address_ranges;
+
+    sampler_infos.reserve(samplers.size());
+
+    for(size_t i = 0; i < samplers.size(); ++i) {
+        SamplerDescriptorInfo info = samplers[i];
+        SamplerResource* resource = m_rm->get_sampler(info.resource);
+
+        uint32_t section = 0;
+        uint32_t slot = sampler_manager.allocate_section(
+            m_sampler_heap.get_section(section),
+            info.resource,
+            m_sampler_heap.get_free_slot());
+
+        sampler_infos.push_back(resource->info);
+        sampler_host_address_ranges.push_back({
+            .address = m_sampler_heap.get_address()
+                        + m_sampler_heap.slots[slot].offset,
+            .size = m_sampler_descriptor_size
+        });
+    }
+
+    m_ctx->vkWriteSamplerDescriptorsEXT(m_ctx->get_device(),
+        static_cast<uint32_t>(sampler_infos.size()),
+        sampler_infos.data(),
+        sampler_host_address_ranges.data()
+    );
+
+    samplers.clear();
+}
+
+void DescriptorHeapAllocator::bind_resource_heap(VkCommandBuffer cmd) {
+    HeapInfo& rinfo = m_resource_heap.m_heap;
+    VkBindHeapInfoEXT bind_resource_heap_info{
         .sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT,
         .heapRange{
-            .address = m_resource_heap.address,
-            .size = m_resource_heap.size
+            .address = rinfo.address,
+            .size = rinfo.size
         },
-        .reservedRangeOffset = m_resource_heap.size - m_reserved_size,
-        .reservedRangeSize = m_reserved_size 
+        .reservedRangeOffset = rinfo.size - m_resource_reserved_size,
+        .reservedRangeSize = m_resource_reserved_size 
     };
 
-    m_ctx->vkCmdBindResourceHeapEXT(cmd, &bind_heap_info); 
+    m_ctx->vkCmdBindResourceHeapEXT(cmd, &bind_resource_heap_info);
+}
+
+void DescriptorHeapAllocator::bind_sampler_heap(VkCommandBuffer cmd) {
+    HeapInfo& sinfo = m_sampler_heap.m_heap;
+    VkBindHeapInfoEXT bind_sampler_heap_info{
+        .sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT,
+        .heapRange{
+            .address = sinfo.address,
+            .size = sinfo.size
+        },
+        .reservedRangeOffset = sinfo.size - m_sampler_reserved_size,
+        .reservedRangeSize = m_sampler_reserved_size 
+    };
+
+    m_ctx->vkCmdBindSamplerHeapEXT(cmd, &bind_sampler_heap_info); 
 }

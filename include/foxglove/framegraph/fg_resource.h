@@ -8,39 +8,18 @@
 #include <string>
 #include <cassert>
 
+class FGBuffer;
+class FGTexture;
+class FGSampler;
+
 using FGBufferHandle = TaggedTHandle<ResourceType::Buffer>;
 using FGTextureHandle = TaggedTHandle<ResourceType::Texture>;
+using FGSamplerHandle = TaggedTHandle<ResourceType::Sampler>;
 
 using FGBufferRegistry = LLHandleRegistry<FGBuffer, FGBufferHandle>;
 using FGTextureRegistry = LLHandleRegistry<FGTexture, FGTextureHandle>;
+using FGSamplerRegistry = LLHandleRegistry<FGSampler, FGSamplerHandle>;
 
-enum ResourceAccess {
-    None = 0,
-    Read = 1,
-    Write = 2,
-    ReadWrite = Read | Write
-};
-
-enum class BufferUsage {
-    StorageBuffer,
-    UniformBuffer,
-    VertexBuffer,
-    IndexBuffer,
-    TransferSrc,
-    TransferDst
-    // Accleration structure
-};
-
-enum class TextureUsage {
-    ColorAttachment,
-    DepthAttachment,
-    StencilAttachment,
-    DepthStencilAttachment,
-    InputAttachment,
-    StorageImage,
-    TransferSrc,
-    TransferDst
-};
 
 class Pass;
 
@@ -51,6 +30,10 @@ public:
         m_name(name), m_type(type) {}
     FGResource(const std::string& name, ResourceType type, bool is_transient) : 
         m_name(name), m_type(type), m_transient(is_transient) {}
+    FGResource(const std::string& name, ResourceType type, ResourceAccess access,
+            bool is_transient)
+        : m_name(name), m_type(type), m_access(access),
+          m_transient(is_transient) {}
 
     ~FGResource() = default;
 
@@ -69,9 +52,9 @@ public:
     void set_last_writer(Pass* pass) { m_last_writer = pass; }
 protected:
     std::string m_name;
-    ResourceAccess m_access;
-
     ResourceType m_type;
+    
+    ResourceAccess m_access;
     
     // upgrade transient to enum if needed
     bool m_transient = true;
@@ -100,6 +83,11 @@ public:
     void set_resource(BufferHandle r) { m_resource_handle = r; }
     void set_resource_ptr(BufferResource* r) { m_resource_ptr = r; }
 private:
+    FGBuffer(const std::string& name, BufferHandle resource,
+            BufferUsage usage, ResourceAccess access)
+        : FGResource(name, ResourceType::Buffer, access, false), 
+          m_usage(usage), m_resource_handle(resource) {}
+
     BufferDesc m_desc;
     FGBufferHandle m_handle;
     BufferUsage m_usage;
@@ -112,12 +100,11 @@ private:
 
 class FGTexture : public FGResource {
 public:
-    FGTexture(const std::string& name, TextureDesc desc) : 
-        FGResource(name, ResourceType::Texture), m_desc(desc) {}
+    FGTexture(const std::string& name, TextureDesc desc)
+        : FGResource(name, ResourceType::Texture), m_desc(desc) {}
     FGTexture(const std::string& name, TextureHandle resource) 
         : FGResource(name, ResourceType::Texture, false), 
-        m_resource_handle(resource) {}
-
+          m_resource_handle(resource) {}
 
     TextureDesc get_desc() const { return m_desc; }
     FGTextureHandle get_handle() const { return m_handle; }
@@ -130,6 +117,11 @@ public:
     void set_resource(TextureHandle r) { m_resource_handle = r; }
     void set_resource_ptr(TextureResource* r) { m_resource_ptr = r; }
 private:
+    FGTexture(const std::string& name, TextureHandle resource,
+            TextureUsage usage, ResourceAccess access) 
+        : FGResource(name, ResourceType::Texture, access, false),
+          m_usage(usage), m_resource_handle(resource) {}
+
     TextureDesc m_desc;
     
     // eventually change last_writer to handle mip levels and move out of base class
@@ -140,4 +132,30 @@ private:
     TextureResource* m_resource_ptr; // ONLY USE IF VALID
 
     friend FGTextureRegistry;
+};
+
+class FGSampler : public FGResource {
+public:
+    FGSampler(const std::string& name, SamplerDesc desc)
+        : FGResource(name, ResourceType::Sampler), m_desc(desc) {}
+    FGSampler(const std::string& name, SamplerHandle resource)
+        : FGResource(name, ResourceType::Sampler, false),
+          m_resource_handle(resource) {}
+
+    SamplerDesc get_desc() const { return m_desc; }
+    FGSamplerHandle get_handle() const { return m_handle; }
+
+    SamplerHandle get_resource () const { return m_resource_handle; }
+    SamplerResource* get_resource_ptr() const { return m_resource_ptr; }
+
+    void set_resource(SamplerHandle r) { m_resource_handle = r; }
+    void set_resource_ptr(SamplerResource* r) { m_resource_ptr = r; }
+private:
+    SamplerDesc m_desc;
+    
+    FGSamplerHandle m_handle;
+    SamplerHandle m_resource_handle;
+    SamplerResource* m_resource_ptr;
+
+    friend FGSamplerRegistry;
 };

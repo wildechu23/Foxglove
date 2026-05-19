@@ -133,6 +133,8 @@ VkAccessFlags2 util::deduce_access_flags(BufferUsage usage) {
             return VK_ACCESS_2_TRANSFER_READ_BIT;
         case BufferUsage::TransferDst:
             return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        case BufferUsage::Unknown:
+            return VK_ACCESS_2_NONE;
         default:
             return VK_ACCESS_2_NONE;
     }
@@ -158,6 +160,8 @@ VkAccessFlags2 util::deduce_access_flags(TextureUsage usage) {
             return VK_ACCESS_2_TRANSFER_READ_BIT;
         case TextureUsage::TransferDst:
             return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        case TextureUsage::Unknown:
+            return VK_ACCESS_2_NONE;
         default:
             return VK_ACCESS_2_NONE;
     }
@@ -176,6 +180,7 @@ VkImageLayout util::deduce_layout(TextureUsage usage) {
         case TextureUsage::DepthStencilAttachment:
             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         case TextureUsage::InputAttachment:
+        case TextureUsage::SampledImage:
             // TODO: CONSIDER OTHER READ ONLY LAYOUTS
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         case TextureUsage::StorageImage:
@@ -185,6 +190,8 @@ VkImageLayout util::deduce_layout(TextureUsage usage) {
             return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         case TextureUsage::TransferDst:
             return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        case TextureUsage::Unknown:
+            return VK_IMAGE_LAYOUT_UNDEFINED;
         default:
             return VK_IMAGE_LAYOUT_UNDEFINED;
     }
@@ -203,6 +210,8 @@ VkPipelineStageFlags2 util::deduce_pipeline_flags(BufferUsage usage) {
         case BufferUsage::TransferSrc:
         case BufferUsage::TransferDst:
             return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        case BufferUsage::Unknown:
+            return VK_PIPELINE_STAGE_2_NONE;
         default:
             return VK_PIPELINE_STAGE_2_NONE;
     }
@@ -219,11 +228,14 @@ VkPipelineStageFlags2 util::deduce_pipeline_flags(TextureUsage usage) {
                 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
         case TextureUsage::InputAttachment:
             return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        case TextureUsage::SampledImage:
         case TextureUsage::StorageImage:
             return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
         case TextureUsage::TransferSrc:
         case TextureUsage::TransferDst:
             return VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        case TextureUsage::Unknown:
+            return VK_PIPELINE_STAGE_2_NONE;
         default:
             return VK_PIPELINE_STAGE_2_NONE;
     }
@@ -245,6 +257,8 @@ VkDescriptorType util::deduce_descriptor_type(TextureUsage usage) {
    switch(usage) {
         case TextureUsage::InputAttachment:
             return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        case TextureUsage::SampledImage:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; 
         case TextureUsage::StorageImage:
             return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         default:

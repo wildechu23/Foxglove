@@ -7,9 +7,6 @@
 
 #include <iostream>
 
-class FGBuffer;
-class FGTexture;
-
 template<typename T, typename HandleT>
 class PoolHandleRegistry {
 public:

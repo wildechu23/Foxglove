@@ -17,6 +17,7 @@ public:
             ResourceAccess access, uint32_t binding);
     PassBuilder& bind_texture(FGTextureHandle handle, TextureUsage usage,
             ResourceAccess access, uint32_t binding);
+    PassBuilder& bind_sampler(FGSamplerHandle handle, uint32_t binding);
     /*
     PassBuilder& bind_buffer(FGBufferHandle handle,
             BufferUsage usage, ResourceAccess access,
