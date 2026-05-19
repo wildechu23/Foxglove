@@ -137,11 +137,13 @@ void PassContext::update_descriptor_heap() {
     
     DescriptorHeapAllocator& heap = *m_fctx->get_descriptor_heap();
     
-    std::vector<BufferDescriptorInfo> buffers;
-    std::vector<TextureDescriptorInfo> textures;
-    std::vector<SamplerDescriptorInfo> samplers;
+    std::vector<BufferKey> buffers;
+    std::vector<TextureKey> textures;
+    std::vector<SamplerKey> samplers;
+
+    std::vector<BufferKey> transient_buffers;
+    std::vector<TextureKey> transient_textures;
     
-    // TODO: CAN I JUST PUSH KEY
     for(const BufferBinding& bb : bindings.buffers) {
         FGBuffer* fg_buffer = m_fg->get_buffer(bb.handle);
         BufferKey key = {
@@ -149,11 +151,9 @@ void PassContext::update_descriptor_heap() {
             bb.usage,
         };
         if(!heap.has_resource(key)) {
-            buffers.push_back({
-                fg_buffer->get_resource(),
-                bb.usage,
-                fg_buffer->is_transient()
-            });
+            if(fg_buffer->is_transient()) {
+                transient_buffers.push_back(key);
+            } else buffers.push_back(key);
         }
     }
 
@@ -165,25 +165,23 @@ void PassContext::update_descriptor_heap() {
             tb.access,
         };
         if(!heap.has_resource(key)) {
-            std::cout << "ADDING DESC FOR " << fg_texture->get_name()
-                << std::endl;
-            textures.push_back({
-                fg_texture->get_resource(),
-                tb.usage,
-                tb.access,
-                fg_texture->is_transient()
-            });
+            if(fg_texture->is_transient()) {
+                transient_textures.push_back(key);
+            } else textures.push_back(key);
         }
     }
 
     for(const SamplerBinding& sb : bindings.samplers) {
         FGSampler* fg_sampler = m_fg->get_sampler(sb.handle);
-        if(!heap.has_resource(fg_sampler->get_resource())) {
-            samplers.push_back({ fg_sampler->get_resource() });
+        SamplerKey key = fg_sampler->get_resource(); 
+        if(!heap.has_resource(key)) {
+            samplers.push_back(key);
         }
     }
 
-    heap.add_descriptors(buffers, textures, samplers);
+    heap.add_descriptors(buffers, textures, samplers,
+            transient_buffers, transient_textures);
+
     heap.write_pending();
 
     // now write into data the size of total_bindings * uint32_t
@@ -220,23 +218,17 @@ void PassContext::update_descriptor_heap() {
     if(bindings.has_resource()) heap.bind_resource_heap(m_cmd);
     if(bindings.has_sampler()) heap.bind_sampler_heap(m_cmd);
 
-    for(BufferDescriptorInfo& info : buffers) {
-        if(info.transient) {
-            m_fctx->get_deletion_queue().push_function([&heap, info]() {
-                heap.free_resource({info.resource, info.usage});
-            });
+    m_fctx->get_deletion_queue().push_function([&heap, transient_buffers]() {
+        for(BufferKey k : transient_buffers) {
+            heap.free_resource(k);
         }
-    }
-    for(TextureDescriptorInfo& info : textures) {
-        if(info.transient) {
-            m_fctx->get_deletion_queue().push_function([&heap, info]() {
-                heap.free_resource({
-                    info.resource, info.usage, info.access
-                });
-            });
-        }
-    }
+    });
 
+    m_fctx->get_deletion_queue().push_function([&heap, transient_textures]() {
+        for(TextureKey k : transient_textures) {
+            heap.free_resource(k);
+        }
+    });
 }
 
 // TODO: for compute pass, maybe move to compute builder

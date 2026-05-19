@@ -42,6 +42,61 @@ struct DescriptorAllocator {
 };
 */
 
+struct BufferKey {
+    BufferHandle handle;
+    BufferUsage usage;
+    bool operator==(const BufferKey& other) const = default;
+};
+
+struct TextureKey {
+    TextureHandle handle;
+    TextureUsage usage;
+    ResourceAccess access;
+    bool operator==(const TextureKey& other) const = default;
+};
+
+using SamplerKey = SamplerHandle;
+
+
+template<>
+struct std::hash<BufferKey> {
+    size_t operator()(const BufferKey& key) const {
+        size_t h1 = std::hash<BufferHandle>{}(key.handle);
+        size_t h2 = std::hash<size_t>{}(static_cast<size_t>(key.usage));
+        return h1 ^ (h2 << 1);
+    }
+};
+
+template<>
+struct std::hash<TextureKey> {
+    size_t operator()(const TextureKey& key) const {
+        size_t h1 = hash<TextureHandle>{}(key.handle);
+        size_t h2 = std::hash<size_t>{}(static_cast<size_t>(key.usage));
+        size_t h3 = std::hash<size_t>{}(static_cast<size_t>(key.access));
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
+};
+
+/*
+struct BufferDescriptorInfo {
+    BufferHandle resource;
+    BufferUsage usage;
+    bool transient;
+};
+
+struct TextureDescriptorInfo {
+    TextureHandle resource;
+    TextureUsage usage;
+    ResourceAccess access;
+    bool transient;
+};
+
+struct SamplerDescriptorInfo {
+    SamplerHandle resource;
+    // bool transient;
+};
+*/
+
 struct HeapInfo {
     BufferHandle handle;
     void* mapped;
@@ -122,38 +177,6 @@ protected:
     std::vector<uint32_t>& free_slots;
 };
 
-struct BufferKey {
-    BufferHandle handle;
-    BufferUsage usage;
-    bool operator==(const BufferKey& other) const = default;
-};
-
-struct TextureKey {
-    TextureHandle handle;
-    TextureUsage usage;
-    ResourceAccess access;
-    bool operator==(const TextureKey& other) const = default;
-};
-
-template<>
-struct std::hash<BufferKey> {
-    size_t operator()(const BufferKey& key) const {
-        size_t h1 = std::hash<BufferHandle>{}(key.handle);
-        size_t h2 = std::hash<size_t>{}(static_cast<size_t>(key.usage));
-        return h1 ^ (h2 << 1);
-    }
-};
-
-template<>
-struct std::hash<TextureKey> {
-    size_t operator()(const TextureKey& key) const {
-        size_t h1 = hash<TextureHandle>{}(key.handle);
-        size_t h2 = std::hash<size_t>{}(static_cast<size_t>(key.usage));
-        size_t h3 = std::hash<size_t>{}(static_cast<size_t>(key.access));
-        return h1 ^ (h2 << 1) ^ (h3 << 2);
-    }
-};
-
 class DescriptorHeap {
 public:    
     void init(std::vector<SectionInfo>& sections, 
@@ -212,23 +235,6 @@ private:
 };
 
 
-struct BufferDescriptorInfo {
-    BufferHandle resource;
-    BufferUsage usage;
-    bool transient;
-};
-
-struct TextureDescriptorInfo {
-    TextureHandle resource;
-    TextureUsage usage;
-    ResourceAccess access;
-    bool transient;
-};
-
-struct SamplerDescriptorInfo {
-    SamplerHandle resource;
-    // bool transient;
-};
 
 class DescriptorHeapAllocator {
 public:
@@ -237,21 +243,16 @@ public:
     void init(VulkanContext* ctx, ResourceManager* rm);
     
     void add_descriptors(
-            std::vector<BufferDescriptorInfo>& new_buffers, 
-            std::vector<TextureDescriptorInfo>& new_textures,
-            std::vector<SamplerDescriptorInfo>& new_samplers
-    ) {
-        buffers.insert(std::end(buffers), std::begin(new_buffers), 
-                std::end(new_buffers));
-        textures.insert(std::end(textures), std::begin(new_textures), 
-                std::end(new_textures));
-        samplers.insert(std::end(samplers), std::begin(new_samplers),
-                std::end(new_samplers));
-    }
+        std::vector<BufferKey>& new_buffers, 
+        std::vector<TextureKey>& new_textures,
+        std::vector<SamplerKey>& new_samplers,
+        std::vector<BufferKey>& new_transient_buffers,
+        std::vector<TextureKey>& new_transient_textures
+    ); 
     
     bool has_resource(BufferKey h) { return buffer_manager.has_resource(h); }
     bool has_resource(TextureKey h) { return texture_manager.has_resource(h); }
-    bool has_resource(SamplerHandle h) { return sampler_manager.has_resource(h); }
+    bool has_resource(SamplerKey h) { return sampler_manager.has_resource(h); }
 
 
     uint32_t get_index(BufferKey h){ 
@@ -262,7 +263,7 @@ public:
         return texture_manager.get_offset(h) / m_image_descriptor_size;
     }
 
-    uint32_t get_index(SamplerHandle h) {
+    uint32_t get_index(SamplerKey h) {
         return sampler_manager.get_offset(h) / m_sampler_descriptor_size;
     }
 
@@ -273,7 +274,7 @@ public:
 
     void free_resource(BufferKey key)   { buffer_manager.free_key(key); }
     void free_resource(TextureKey key)  { texture_manager.free_key(key); }
-    void free_resource(SamplerHandle h) { sampler_manager.free_key(h); }
+    void free_resource(SamplerKey h) { sampler_manager.free_key(h); }
 private:
     void write_pending_resources();
     void write_pending_samplers();
@@ -288,12 +289,15 @@ private:
         m_resource_heap.slots, m_resource_heap.free_slots};
     DescriptorTypeManager<TextureKey> texture_manager{
         m_resource_heap.slots, m_resource_heap.free_slots};
-    DescriptorTypeManager<SamplerHandle> sampler_manager{
+    DescriptorTypeManager<SamplerKey> sampler_manager{
         m_sampler_heap.slots, m_sampler_heap.free_slots};
 
-    std::vector<BufferDescriptorInfo> buffers;
-    std::vector<TextureDescriptorInfo> textures;
-    std::vector<SamplerDescriptorInfo> samplers;
+    std::vector<BufferKey> buffers;
+    std::vector<TextureKey> textures;
+    std::vector<SamplerKey> samplers;
+
+    std::vector<BufferKey> transient_buffers;
+    std::vector<TextureKey> transient_textures;
     
     uint32_t m_resource_reserved_size;
     uint32_t m_sampler_reserved_size;
@@ -307,3 +311,7 @@ private:
     uint32_t m_sampler_align;
     
 };
+
+
+
+
