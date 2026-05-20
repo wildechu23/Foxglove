@@ -126,8 +126,9 @@ int main() {
         FGSamplerHandle sampler = fg.import_sampler("sampler", sampler_r);
         
         fg.create_pass("test", PassType::Clear)
-            .clear_color(draw_image, Color{0.7f, 0.5f, 0.7f, 1.f})
+            .clear_color(fake_image, Color{0.7f, 0.5f, 0.7f, 1.f})
             .build();
+
         /* 
         fg.create_pass("compute", PassType::Compute)
             .bind_texture(fake_image, TextureUsage::StorageImage,
@@ -138,8 +139,7 @@ int main() {
                         std::ceil(720/16.0), 1);
             })
             .build();
-        */
-
+        
         
         struct DrawPushConstant {
             glm::vec2 src_offset;
@@ -147,15 +147,7 @@ int main() {
             glm::vec2 extent;
         };
         DrawPushConstant dpc = {
-            .src_offset = {0, 0},
-            .dst_offset = {0, 0},
-            .extent = {0,0}
-        };
-
-        fg.create_pass("draw image", PassType::Compute)
-            .bind_texture(texture, TextureUsage::StorageImage,
-                    ResourceAccess::Read, 0)
-            .bind_texture(draw_image, TextureUsage::StorageImage,
+            .src_draw_image, TextureUsage::StorageImage,
                     ResourceAccess::Write, 1)
             .execute([&](PassContext ctx) {
                 ctx.bind_compute_pipeline(draw);
@@ -163,6 +155,7 @@ int main() {
                 ctx.dispatch_compute(40, 40, 1);
             })
             .build();
+            */
             
          
         struct PushConstant {
@@ -177,7 +170,7 @@ int main() {
             .bind_texture(texture, TextureUsage::SampledImage,
                     ResourceAccess::Read, 0)
             .bind_sampler(sampler, 1)
-            .bind_color_attachment(draw_image, 
+            .bind_color_attachment(fake_image, 
                     LoadOp::Load, StoreOp::Store)
             .bind_depth_attachment(depth_image,
                     LoadOp::Clear, StoreOp::Store, 0.f)
@@ -191,7 +184,7 @@ int main() {
                     );
             })
             .build();
-            /*
+            
         struct BlurPushConstant {
             glm::vec2 center;
             float start;
@@ -218,7 +211,7 @@ int main() {
                         std::ceil(720/16.0), 1);
             })
             .build();
-            */
+            
         
         fg.create_pass("present", PassType::Present)
             .present(draw_image)

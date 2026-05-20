@@ -29,6 +29,8 @@ namespace util {
     VkAccessFlags2 deduce_access_flags(TextureUsage usage);
 
     VkImageLayout deduce_layout(TextureUsage usage);
+    VkImageLayout deduce_layout(TextureUsage usage, ResourceAccess access);
+
     VkPipelineStageFlags2 deduce_pipeline_flags(BufferUsage usage);
     VkPipelineStageFlags2 deduce_pipeline_flags(TextureUsage usage);
 

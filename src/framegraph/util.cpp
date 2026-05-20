@@ -168,6 +168,9 @@ VkAccessFlags2 util::deduce_access_flags(TextureUsage usage) {
 }
 
 VkImageLayout util::deduce_layout(TextureUsage usage) {
+    std::cerr << "USING OUTDATED LAYOUT FUNCTION, MISMATCH IN LAYOUT MAY OCCUR"
+        << std::endl;
+
     switch(usage) {
         case TextureUsage::ColorAttachment:
             return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
@@ -185,6 +188,46 @@ VkImageLayout util::deduce_layout(TextureUsage usage) {
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         case TextureUsage::StorageImage:
             // TODO: IS THIS OPTIMIZABLE?
+            return VK_IMAGE_LAYOUT_GENERAL;
+        case TextureUsage::TransferSrc:
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        case TextureUsage::TransferDst:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        case TextureUsage::Unknown:
+            return VK_IMAGE_LAYOUT_UNDEFINED;
+        default:
+            return VK_IMAGE_LAYOUT_UNDEFINED;
+    }
+}
+
+VkImageLayout util::deduce_layout(TextureUsage usage, ResourceAccess access) {
+    switch(usage) {
+        case TextureUsage::ColorAttachment:
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+        case TextureUsage::DepthAttachment:
+            if(access == ResourceAccess::Read) {
+                return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            } else {
+                return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            }
+        case TextureUsage::StencilAttachment:
+            if(access == ResourceAccess::Read) {
+                return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+            } else {
+                return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            }
+        case TextureUsage::DepthStencilAttachment:
+            // TODO: CONSIDER ONE READ-ONLY, ONE NOT
+            if(access == ResourceAccess::Read) {
+                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            } else {
+                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            }
+        case TextureUsage::InputAttachment:
+        case TextureUsage::SampledImage:
+            // TODO: CONSIDER OTHER READ ONLY LAYOUTS
+            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case TextureUsage::StorageImage:
             return VK_IMAGE_LAYOUT_GENERAL;
         case TextureUsage::TransferSrc:
             return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;

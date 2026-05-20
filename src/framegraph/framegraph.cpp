@@ -400,13 +400,15 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
                     tti.src_usage);
             VkAccessFlags2 src_access = util::deduce_access_flags(
                     tti.src_usage);
-            VkImageLayout src_layout = util::deduce_layout(tti.src_usage);
+            VkImageLayout src_layout = util::deduce_layout(tti.src_usage,
+                    tti.src_access);
 
             VkPipelineStageFlags2 dst_stage = util::deduce_pipeline_flags(
                     tti.dst_usage);
             VkAccessFlags2 dst_access = util::deduce_access_flags(
                     tti.dst_usage);
-            VkImageLayout dst_layout = util::deduce_layout(tti.dst_usage);
+            VkImageLayout dst_layout = util::deduce_layout(tti.dst_usage,
+                    tti.dst_access);
 
             VkImageAspectFlags aspect_mask;
             if (dst_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) {
@@ -414,7 +416,7 @@ void FrameGraph::compile_pass_barriers(FrameContext& fctx) {
             } else {
                 aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
             }
-            std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
+            //std::cout << texture->get_name() << ": " << src_layout << " to " << dst_layout << std::endl;
             //std::cout << texture->get_name() << ": " << tr->image << std::endl;
 
 
